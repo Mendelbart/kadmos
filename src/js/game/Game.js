@@ -264,7 +264,7 @@ export default class Game {
      * @returns {Card[]}
      */
     referenceCards(referenceItems, property) {
-        this.referenceCardFactory.setDisplayArgs(property);
+        this.referenceCardFactory.setConfig("property", property);
         return referenceItems.map(item => this.referenceCardFactory.createCard(item));
     }
 

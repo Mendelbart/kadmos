@@ -191,7 +191,7 @@
                 "ignoreBrackets": {
                   "type": "string",
                   "default": "(",
-                  "description": "Used to ignore content in brackets or parentheses for grading. String of opening bracket charaters, e.g. \"([\" to ignore (...) and [...]. Default: \"(\"."
+                  "description": "Used to ignore content in brackets or parentheses for grading. String of opening bracket characters, e.g. \"([\" to ignore (...) and [...]. Default: \"(\"."
                 }
               }
             },
@@ -367,6 +367,11 @@
                   "anyOf": [
                     {
                       "type": "object",
+                      "properties": {
+                        "combine": {
+                          "type": "string"
+                        }
+                      },
                       "oneOf": [
                         {
                           "properties": {
@@ -685,6 +690,85 @@
             }
           },
           "additionalProperties": false
+        },
+        "combine": {
+          "type": "object",
+          "properties": {
+            "methods": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-z]+$": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "subsets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "letterConfig": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {"const": null},
+                          {
+                            "type": "object",
+                            "properties": {
+                              "form": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "properties": {
+                      "type": "object",
+                      "patternProperties": {
+                        "^[a-z]+$": {
+                          "type": "object",
+                          "properties": {
+                            "sources": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "templates": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "prefixItems": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "unevaluatedItems": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          }
         }
       },
       "required": ["subsets"]

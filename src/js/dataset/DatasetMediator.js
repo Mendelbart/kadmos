@@ -22,6 +22,7 @@ export default class DatasetMediator extends Observable {
 
     updateSubset() {
         const key = this.subsetSetting ? this.subsetSetting.value : null;
+        /** @type {DatasetSubset} */
         this.subset = this.dataset.getSubset(key);
         this.setupSettings();
         this.setupSelector();
@@ -37,6 +38,84 @@ export default class DatasetMediator extends Observable {
 
         this.selectorSettings = selectorSettings;
         this.gameSettings = gameSettings;
+
+        this.selectorSettings.observers.push(() => this.setupCombineSettings());
+        this.setupCombineSettings();
+    }
+
+    currentForms() {
+        return this.selectorSettings.getDefault("forms", this.subset.defaultFormKey());
+    }
+
+    removeCombineSettings() {
+        this.removeCombineMethodSetting();
+        this.removeCombineLettersSetting();
+    }
+
+    removeCombineMethodSetting() {
+        if (this.combineMethodSetting) {
+            this.combineMethodSetting.remove();
+            this.combineMethodSetting.teardown();
+            this.combineMethodSetting = null;
+        }
+    }
+
+    removeCombineLettersSetting() {
+        if (this.combineLettersSettings) {
+            this.combineLettersSettings.remove();
+            this.combineLettersSettings.teardown();
+            this.combineLettersSettings = null;
+        }
+    }
+
+    setupCombineSettings() {
+        this.removeCombineSettings();
+
+        if (this.selectorSettings.has("forms") && !this.selectorSettings.get("forms").exclusive) return;
+
+        const form = this.currentForms();
+        if (!this.subset.getFormConfig(form).combine) return;
+
+        /** @type {ButtonGroup} */
+        this.combineMethodSetting = this.dataset.combineMethodSetting(this.subset.key, form);
+        this.combineMethodSetting.observers.push(value => this.setupCombineLetterSettings(value));
+        this.selectorSettings.node.insertAdjacentElement("afterend", this.combineMethodSetting.node)
+        this.setupCombineLetterSettings();
+    }
+
+    /**
+     * @param {string} [method]
+     */
+    setupCombineLetterSettings(method) {
+        this.removeCombineLettersSetting();
+
+        method ??= this.combineMethodSetting.value;
+        /** @type SettingCollection */
+        this.combineLettersSettings = this.dataset.combineLettersSettings(method, this.subset.key);
+        this.combineLettersSettings.observers.push(() => this.applyCombineSettings());
+        this.combineMethodSetting.node.insertAdjacentElement("afterend", this.combineLettersSettings.node);
+        this.applyCombineSettings();
+    }
+
+    applyCombineSettings() {
+        const form = this.currentForms();
+        const method = this.combineMethodSetting.value;
+        const combiner = this.dataset.combine.methods[method].combiner;
+        const values = this.dataset.getCombineLetters(method, this.combineLettersSettings.getValues());
+        const index = values.indexOf(null);
+
+        this.selector.updateButtonContents((content, item) => {
+            this.findFormElement(content, form).replaceChildren(
+                item.getForm(form).getNode({combine: {combiner: combiner, values: values, index: index}})
+            );
+        });
+    }
+
+    findFormElement(content, form) {
+        for (const elem of content.querySelectorAll(".letter")) {
+            if (elem.dataset.form === form) return elem;
+        }
+        throw new Error("Form element not found.");
     }
 
     setupSelector() {
@@ -141,6 +220,7 @@ export default class DatasetMediator extends Observable {
             this.selectorSettings.setValues(values);
             const {forms, variant} = this.selectorSettings.getValues();
             this.applySelectorSettings(forms, variant);
+            this.setupCombineSettings();
         } catch (error) {
             console.error("Error setting selector settings values:", error);
         }
@@ -210,15 +290,13 @@ export default class DatasetMediator extends Observable {
         const attrs = this.dataset.getLetterNodeAttrs(this.getVariant());
         const property = Object.keys(this.subset.properties)[0];
 
-        const factory = new CardFactory(
-            (card, item, ...args) => {
-                card.display(item.content.getNode(...args));
-                card.setLabel("bottom", item.answers[property].display)
+        return new CardFactory(
+            (card, item, {combine}) => {
+                card.display(item.content.getNode({combine}));
+                card.setLabel("bottom", item.answers[property].display);
             },
             card => DOMUtils.setAttrs(card.displayNode, attrs)
         );
-        factory.setDisplayArgs();
-        return factory;
     }
 
     /**
@@ -235,8 +313,8 @@ export default class DatasetMediator extends Observable {
         const cardFactory = this.getCardFactory();
 
         const game = new Game(dealer, cardFactory);
-        game.setReferenceItems(referenceItems, (card, item, property) => {
-            card.display(item.content.getNode());
+        game.setReferenceItems(referenceItems, (card, item, {property, combine}) => {
+            card.display(item.content.getNode({combine}));
             card.setLabel("bottom", item.answers[property].display);
         });
 
@@ -247,7 +325,7 @@ export default class DatasetMediator extends Observable {
             {lang: params.language}
         );
 
-        return game
+        return game;
     }
 
     /**

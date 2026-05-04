@@ -4,6 +4,7 @@ import {DOMUtils} from '../utils';
  * @interface CardContent
  *//**
  * @function CardContent#getNode
+ * @param {Record<string, *>} [config]
  * @returns HTMLElement
  */
 
@@ -20,49 +21,40 @@ export class Letter {
         this.form = form;
     }
 
-    getNode() {
+    getNode(config) {
         throw new Error('Not implemented');
     }
 }
 
+/**
+ * @typedef {{combiner: StringCombiner, values: string[], index: number}} CombineConfig
+ */
+
 
 export class StringLetter extends Letter {
     /**
-     * @returns {HTMLSpanElement}
+     * @param {CombineConfig} [combine]
+     * @returns {HTMLElement}
      */
-    getNode() {
-        const node = DOMUtils.createElement("span.letter.letter-string", this.data);
+    getNode({combine} = {}) {
+        const content = combine ? this.combineSelf(combine) : this.data;
+        const node = DOMUtils.createElement("span.letter.letter-string", content);
         if (this.form) node.dataset.form = this.form;
         return node;
     }
-}
-
-
-export class CombiningStringLetter extends StringLetter {
-    /**
-     * @param {string} str
-     * @param {function(string[]): string} combiner
-     * @param {string|number} key
-     * @param {string} [form]
-     */
-    constructor(str, combiner, key, form) {
-        super(str, key, form);
-        this.combiner = combiner;
-    }
 
     /**
-     * @param {string} base
-     * @returns {HTMLSpanElement}
+     * @param {CombineConfig} config
+     * @returns {string}
      */
-    getNode(base) {
-        const node = super.getNode();
-        node.textContent = this.combiner([base, this.str]);
-        return node;
+    combineSelf(config) {
+        const {combiner, values, index} = config;
+        return combiner.combine(values.toSpliced(index, 1, this.data));
     }
 }
 
 
-export class ImageLetter extends Letter{
+export class ImageLetter extends Letter {
     /**
      * @returns {HTMLImageElement}
      */
@@ -89,29 +81,5 @@ export class LetterCombination {
      */
     getNode(...args) {
         return DOMUtils.createElement("span.letter-combination", ...this.letters.map(letter => letter.getNode(...args)));
-    }
-}
-
-
-/**
- * @param {string} template
- * @param {number | (string | RegExp)[]} sourceRegExps - if number `n`, will use default RegExp `/.*?/` `n` times
- * @returns {function(string[]): string}
- */
-export function stringComponentCombiner(template, sourceRegExps) {
-    if (typeof sourceRegExps === 'number') {
-        sourceRegExps = new Array(sourceRegExps).fill('.*?');
-    }
-
-    const pattern = sourceRegExps.map((regex, index) => {
-        if (typeof regex !== 'string') regex = regex.source;
-        return `(?<g${index}>${regex})`;
-    }).join('\\t');
-    const sourceRegExp = new RegExp("^" + pattern + "$", "u");
-
-    return (components) => {
-        const source = components.join('\t');
-        if (!sourceRegExp.test(source)) throw new Error("Components don't match RegExps.");
-        return source.replace(sourceRegExp, template);
     }
 }

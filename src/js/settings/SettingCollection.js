@@ -69,12 +69,12 @@ export default class SettingCollection extends Observable {
     /**
      * @param {string} key
      */
-    remove(key) {
+    delete(key) {
         this.map.get(key).remove();
         delete this.map.delete(key);
     }
 
-    removeAll() {
+    deleteAll() {
         this.node.replaceChildren();
         this.map.clear();
     }
@@ -154,5 +154,9 @@ export default class SettingCollection extends Observable {
             setting.teardown();
         }
         super.teardown();
+    }
+
+    remove() {
+        this.node.remove();
     }
 }

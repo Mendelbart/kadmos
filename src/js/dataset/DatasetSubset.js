@@ -8,10 +8,12 @@ import {ButtonGroup, ValueElement, SettingCollection} from "../settings";
 import QuizItem from '../quiz/QuizItem';
 
 
+export const DEFAULT_FORM_KEY = "0";
 const DEFAULT_FORMS = {
-    data: {default: "Default"},
+    data: {},
     exclusive: false
 };
+DEFAULT_FORMS.data[DEFAULT_FORM_KEY] = "Default";
 
 
 
@@ -508,6 +510,49 @@ export default class DatasetSubset {
         ));
     }
 
+    defaultFormKey() {
+        return Object.keys(this.forms.data)[0];
+    }
+
+    getFormConfig(form) {
+        form ??= this.defaultFormKey();
+        return this.forms.data[form];
+    }
+
+    /**
+     * @param {string} form
+     * @return {string[] | undefined}
+     */
+    combineMethods(form) {
+        return this.getFormConfig(form).combine;
+    }
+
+    /**
+     * @param form
+     * @return {ValueElement}
+     */
+    letterSelect({form} = {}) {
+        form ??= this.defaultFormKey();
+        return ValueElement.createSelect(
+            Object.fromEntries(
+                this.items
+                    .map((item, index) => [index, item])
+                    .filter(([_, item]) => item.hasForm(form))
+                    .map(([index, item]) => [index, item.getForm(form).data])
+            )
+        );
+    }
+
+    /**
+     * @param {number} index
+     * @param {string} [form]
+     * @return {Letter}
+     */
+    getLetterForm(index, form) {
+        form ??= this.defaultFormKey();
+        console.log(index, form, this.items[index]);
+        return this.items[index].getForm(form);
+    }
 }
 
 

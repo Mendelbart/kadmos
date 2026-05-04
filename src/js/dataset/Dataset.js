@@ -3,6 +3,7 @@ import {SettingCollection, ButtonGroup} from "../settings";
 import DATASETS_METADATA from '../../json/datasets_meta.json';
 import {Font} from "../utils/font";
 import DatasetSubset from "./DatasetSubset";
+import StringCombiner from "./combine";
 
 DOMUtils.registerTemplate(
     "headingElement",
@@ -87,6 +88,7 @@ export class Dataset {
         this.gameConfig = data.game ?? {};
         this.variants = data.variants;
         this.subsets = this.processSubsets(data);
+        this.combine = this.processCombine(data.combine);
     }
 
     /**
@@ -155,10 +157,37 @@ export class Dataset {
         const result = Object.assign({}, globalVariants);
         result.data = {};
         for (const [key, letters] of Object.entries(variants.data)) {
-            result.data[key] = Object.assign({}, globalVariants.data[key], {"letters": letters});
+            result.data[key] = Object.assign({}, globalVariants.data[key], {letters: letters});
         }
         result.defaultLetterKey = variants.defaultLetterKey ?? globalVariants.defaultLetterKey;
         return result;
+    }
+
+    /**
+     * @param combine
+     * @return {?Record<string, *>}
+     */
+    processCombine(combine) {
+        if (!combine) return null;
+
+        for (const method of Object.values(combine.methods)) {
+            method.combiner = new StringCombiner(method.subsets.length, method.templates, method.regExpFlags);
+
+            if (method.properties === "auto" || !method.properties) {
+                method.properties = {};
+                for (const key of Object.keys(this.subsets[method.subsets[0]].properties)) {
+                    if (method.subsets.every(k => k in this.subsets[k].properties)) {
+                        method.properties[key] = {sources: method.subsets.map(() => key)};
+                    }
+                }
+            }
+
+            for (const config of Object.values(method.properties)) {
+                config.combiner = new StringCombiner(config.sources.length, config.templates, config.regExpFlags);
+            }
+        }
+
+        return combine;
     }
 
 
@@ -258,6 +287,60 @@ export class Dataset {
     getSubset(subset) {
         if (subset && this.hasSetting("subset")) return this.subsets[subset];
         return Object.values(this.subsets)[0];
+    }
+
+    /**
+     * @param {string} subset
+     * @param {string} form
+     * @returns {ButtonGroup}
+     */
+    combineMethodSetting(subset, form) {
+        /** @type {string | string[]} */
+        let keys = this.subsets[subset].combineMethods(form);
+        if (!keys) throw new Error("Form doesn't use combine.");
+        if (typeof keys === "string") keys = [keys];
+
+        return ButtonGroup.from(
+            ObjectUtils.map(
+                ObjectUtils.onlyKeys(this.combine.methods, keys),
+                (m, key) => m.label || key
+            ),
+            {exclusive: true, checked: keys[0]}
+        );
+    }
+
+    /**
+     * @param {string} method
+     * @param {string} subset
+     * @return {SettingCollection}
+     */
+    combineLettersSettings(method, subset) {
+        const sc = new SettingCollection();
+        const config = this.combine.methods[method];
+        const letterConfig = config.letterConfig || new Array(config.subsets.length).fill(null);
+
+        for (const [index, ss] of config.subsets.entries()) {
+            if (ss === subset) continue;
+            const setting = this.subsets[ss].letterSelect(letterConfig);
+            sc.add(index, setting);
+        }
+
+        return sc;
+    }
+
+    /**
+     * @param {string} method
+     * @param {Record<string, *>} settingsValue
+     * @returns {(string | null)[]}
+     */
+    getCombineLetters(method, settingsValue) {
+        const config = this.combine.methods[method];
+        return config.subsets.map((ss, index) => {
+            const key = settingsValue[index];
+            if (key == null) return null;
+            const form = config.letterConfig ? config.letterConfig[index] : null;
+            return this.subsets[ss].getLetterForm(parseInt(key), form).data;
+        });
     }
 
     // ============================= FONTS ====================================

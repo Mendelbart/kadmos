@@ -69,7 +69,7 @@ export default class Selector extends Observable {
     }
 
     /**
-     * @param {function(HTMLDivElement, any, number): void} callback
+     * @param {function(HTMLElement, any, number): void} callback
      */
     updateButtonContents(callback) {
         this._buttonCallback((b, f) => b.updateButtonContents(f), callback);

@@ -143,7 +143,7 @@ export class Card {
 
 export class CardFactory {
     /**
-     * @param {CardFactory | function(Card, QuizItem, ...any?)} display
+     * @param {CardFactory | function(Card, QuizItem, Record<string, *>)} display
      * @param {function(Card): void} [setup]
      */
     constructor(display, setup) {
@@ -161,14 +161,23 @@ export class CardFactory {
                 this.setup = display.setup;
             }
         }
-        this.displayArgs = [];
+
+        this.config = {};
     }
 
     /**
-     * @param {any} args
+     * @param {string} key
+     * @param {any} value
      */
-    setDisplayArgs(...args) {
-        this.displayArgs = args;
+    setConfig(key, value) {
+        this.config[key] = value;
+    }
+
+    /**
+     * @param {string} key
+     */
+    removeConfig(key) {
+        delete this.config[key];
     }
 
     /**
@@ -177,7 +186,7 @@ export class CardFactory {
      */
     display(card, item) {
         card.clear();
-        this.displayCallback(card, item, ...this.displayArgs);
+        this.displayCallback(card, item, this.config);
     }
 
     /**
