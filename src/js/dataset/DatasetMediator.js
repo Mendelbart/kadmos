@@ -8,16 +8,19 @@ import {SettingCollection, Slider} from "../settings";
 export default class DatasetMediator extends Observable {
     /**
      * @param {Dataset} dataset
+     * @param {string} [subset]
      */
-    constructor(dataset) {
+    constructor(dataset, {subset}) {
         super();
         this.dataset = dataset;
         if (this.dataset.hasSetting("subset")) {
-            this.subsetSetting = this.dataset.subsetSetting();
+            /** @type ButtonGroup */
+            this.subsetSetting = this.dataset.subsetSetting(subset);
             this.subsetSetting.observers.push(() => this.updateSubset());
         }
 
         this.updateSubset();
+        this.applyCombineSettings = this.applyCombineSettings.bind(this);
     }
 
     updateSubset() {
@@ -39,7 +42,6 @@ export default class DatasetMediator extends Observable {
         this.selectorSettings = selectorSettings;
         this.gameSettings = gameSettings;
 
-        this.selectorSettings.observers.push(() => this.setupCombineSettings());
         this.setupCombineSettings();
     }
 
@@ -68,49 +70,86 @@ export default class DatasetMediator extends Observable {
         }
     }
 
-    setupCombineSettings() {
-        this.removeCombineSettings();
-
-        if (this.selectorSettings.has("forms") && !this.selectorSettings.get("forms").exclusive) return;
-
+    /**
+     * @return {boolean}
+     */
+    hasCombine() {
+        if (this.selectorSettings.has("forms") && !this.selectorSettings.get("forms").exclusive) return false;
         const form = this.currentForms();
-        if (!this.subset.getFormConfig(form).combine) return;
-
-        /** @type {ButtonGroup} */
-        this.combineMethodSetting = this.dataset.combineMethodSetting(this.subset.key, form);
-        this.combineMethodSetting.observers.push(value => this.setupCombineLetterSettings(value));
-        this.selectorSettings.node.insertAdjacentElement("afterend", this.combineMethodSetting.node)
-        this.setupCombineLetterSettings();
+        return !!this.subset.getFormConfig(form).combine;
     }
 
     /**
-     * @param {string} [method]
+     * @param {string} method
+     * @param {number[]} keys
      */
-    setupCombineLetterSettings(method) {
+    setupCombineSettings({method, keys} = {}) {
+        this.removeCombineSettings();
+
+        if (!this.hasCombine()) return;
+
+        const form = this.currentForms();
+
+        /** @type {ButtonGroup} */
+        this.combineMethodSetting = this.dataset.combineMethodSetting(this.subset.key, form, method);
+        this.combineMethodSetting.observers.push(value => DOMUtils.transition(
+            () => {
+                this.setupCombineLetterSettings(value);
+                this.callObservers();
+            },
+            ["selector-forms"]
+        ));
+        this.selectorSettings.node.insertAdjacentElement("afterend", this.combineMethodSetting.node)
+        this.setupCombineLetterSettings(keys);
+    }
+
+    /**
+     * @param {number[]} [selected]
+     */
+    setupCombineLetterSettings(selected) {
         this.removeCombineLettersSetting();
 
-        method ??= this.combineMethodSetting.value;
+        const method = this.combineMethodSetting.value;
         /** @type SettingCollection */
-        this.combineLettersSettings = this.dataset.combineLettersSettings(method, this.subset.key);
-        this.combineLettersSettings.observers.push(() => this.applyCombineSettings());
+        this.combineLettersSettings = this.dataset.combineLettersSettings(method, this.subset.key, selected);
+        this.combineLettersSettings.observers.push(this.applyCombineSettings, this.callObservers);
         this.combineMethodSetting.node.insertAdjacentElement("afterend", this.combineLettersSettings.node);
         this.applyCombineSettings();
+    }
+    
+    getCombineSettingsValues() {
+        return {
+            method: this.combineMethodSetting.value,
+            keys: Object.values(this.combineLettersSettings.getValues())
+        };
+    }
+
+    getCombineConfig() {
+        const {method, keys} = this.getCombineSettingsValues();
+        /** @type StringCombiner */
+        const combiner = this.dataset.combine.methods[method].combiner;
+        const values = this.dataset.getCombineLetters(method, keys);
+        const index = values.indexOf(null);
+
+        return {combiner, values, index};
     }
 
     applyCombineSettings() {
         const form = this.currentForms();
-        const method = this.combineMethodSetting.value;
-        const combiner = this.dataset.combine.methods[method].combiner;
-        const values = this.dataset.getCombineLetters(method, this.combineLettersSettings.getValues());
-        const index = values.indexOf(null);
+        const combineConfig = this.getCombineConfig();
 
         this.selector.updateButtonContents((content, item) => {
             this.findFormElement(content, form).replaceChildren(
-                item.getForm(form).getNode({combine: {combiner: combiner, values: values, index: index}})
+                item.getForm(form).getNode({combine: combineConfig})
             );
         });
     }
 
+    /**
+     * @param {HTMLElement} content
+     * @param {string} form
+     * @returns {HTMLElement}
+     */
     findFormElement(content, form) {
         for (const elem of content.querySelectorAll(".letter")) {
             if (elem.dataset.form === form) return elem;
@@ -136,11 +175,7 @@ export default class DatasetMediator extends Observable {
         this.selector.setupButtonContents(item => item.combineForms(forms).getNode());
 
         if (this.subset.selectorData.label) {
-            const property = this.subset.selectorData.label.property;
-            this.selector.labelButtons(item => item.getProperty({
-                property: property,
-                splitter: this.subset.getPropertySplitter(property)
-            }));
+            this.selector.labelButtons((item, index) => this.subset.getSelectorItemLabel(index));
         }
     }
 
@@ -161,10 +196,12 @@ export default class DatasetMediator extends Observable {
      * @returns {{checked: boolean[], form?: string, variant?: string, properties?: string[], language?: string}}
      */
     getSettingsValues() {
+        const {method, keys} = this.hasCombine() ? this.getCombineSettingsValues() : {};
         return Object.assign(
             {checked: this.selector.getChecked({includeDisabled: true})},
             this.selectorSettings.getValues(),
-            this.gameSettings.getValues()
+            this.gameSettings.getValues(),
+            this.hasCombine() ? {combineMethod: method, combineKeys: keys} : null
         );
     }
 
@@ -220,7 +257,7 @@ export default class DatasetMediator extends Observable {
             this.selectorSettings.setValues(values);
             const {forms, variant} = this.selectorSettings.getValues();
             this.applySelectorSettings(forms, variant);
-            this.setupCombineSettings();
+            this.setupCombineSettings({method: values.combineMethod, keys: values.combineKeys});
         } catch (error) {
             console.error("Error setting selector settings values:", error);
         }
@@ -246,7 +283,7 @@ export default class DatasetMediator extends Observable {
         }
 
         if (!changed || changed === "variant") {
-            this.updateSelectorFont(variant);
+            if (this.dataset.hasFonts()) this.updateSelectorFont(variant);
             const lang = this.dataset.getLang(variant);
             if (lang) {
                 this.selector.updateButtonContents(content => {
@@ -258,6 +295,8 @@ export default class DatasetMediator extends Observable {
         this.selector.setDisabled(
             (item, index) => !this.subset.isItemIncluded(index, variant) || item.countQuizItems(formKeys) === 0
         );
+
+        this.setupCombineSettings();
     }
 
     /**
@@ -288,15 +327,27 @@ export default class DatasetMediator extends Observable {
      */
     getCardFactory() {
         const attrs = this.dataset.getLetterNodeAttrs(this.getVariant());
-        const property = Object.keys(this.subset.properties)[0];
+        const property = this.cardLabelProperty();
+        const config = {property};
+        if (this.hasCombine()) config.combine = this.getCombineConfig();
 
         return new CardFactory(
-            (card, item, {combine}) => {
+            (card, item, {combine, property}) => {
                 card.display(item.content.getNode({combine}));
                 card.setLabel("bottom", item.answers[property].display);
             },
-            card => DOMUtils.setAttrs(card.displayNode, attrs)
+            {
+                setup: card => {
+                    DOMUtils.setAttrs(card.displayNode, attrs);
+                    card.displayNode.classList.add("font-transform");
+                },
+                config
+            }
         );
+    }
+
+    cardLabelProperty() {
+        return Object.keys(this.subset.properties)[0];
     }
 
     /**
@@ -313,12 +364,18 @@ export default class DatasetMediator extends Observable {
         const cardFactory = this.getCardFactory();
 
         const game = new Game(dealer, cardFactory);
-        game.setReferenceItems(referenceItems, (card, item, {property, combine}) => {
-            card.display(item.content.getNode({combine}));
-            card.setLabel("bottom", item.answers[property].display);
-        });
+        game.setReferenceItems(referenceItems, cardFactory);
 
-        game.setupCardSettings(this.getCardSettings(), this.cardSettingsCallback(params.variant));
+        switch (this.subset.letterType) {
+            case "string":
+                game.addCardSettings(this.getFontSettings(), this.fontSettingsCallback(params.variant));
+                break;
+            case "braille":
+                game.addCardSettings(this.getBrailleSettings(), this.brailleSettingsCallback());
+                break;
+        }
+
+        game.setCardDisplayMeta({dir: this.dataset.getDir(), lang: this.dataset.getLang(this.subset.key, params.variant)});
 
         game.setupAnswerInputs(
             properties.map(key => {return {key: key, label: this.subset.properties[key].label}}),
@@ -341,21 +398,23 @@ export default class DatasetMediator extends Observable {
     /**
      * @returns {SettingCollection}
      */
-    getCardSettings() {
+    getFontSettings() {
         const sc = new SettingCollection();
 
-        const weightSlider = Slider.create(100, 900, this.dataset.gameConfig.defaultWeight ?? 500);
-        weightSlider.label("Weight");
+        if (this.dataset.hasFonts()) {
+            const weightSlider = Slider.create(100, 900, this.dataset.gameConfig.defaultWeight ?? 500);
+            weightSlider.label("Weight");
 
-        if (this.dataset.hasSetting("font-family")) {
-            sc.add("family", this.dataset.fontFamilySetting());
-            sc.addObserverTo("family", key => this.updateSymbolWeightRange(key, weightSlider));
-            this.updateSymbolWeightRange(sc.getValue("family"), weightSlider);
-        } else {
-            this.updateSymbolWeightRange(this.dataset.fonts.defaultKey, weightSlider);
+            if (this.dataset.hasSetting("font-family")) {
+                sc.add("family", this.dataset.fontFamilySetting());
+                sc.addObserverTo("family", key => this.updateSymbolWeightRange(key, weightSlider));
+                this.updateSymbolWeightRange(sc.getValue("family"), weightSlider);
+            } else {
+                this.updateSymbolWeightRange(this.dataset.fonts.defaultKey, weightSlider);
+            }
+
+            sc.add("weight", weightSlider);
         }
-
-        sc.add("weight", weightSlider);
 
         return sc;
     }
@@ -364,9 +423,9 @@ export default class DatasetMediator extends Observable {
      * @param {string} [variant]
      * @returns {function(Card, {family, weight}, string?): void}
      */
-    cardSettingsCallback(variant) {
+    fontSettingsCallback(variant) {
         return (card, {family, weight}, changed) => {
-            if (!changed || changed === "family") {
+            if (this.dataset.hasFonts() && (!changed || changed === "family")) {
                 const font = this.dataset.getFont(family, variant);
                 font.load().then(() => {
                     font.applyTo(card.displayNode);
@@ -376,6 +435,21 @@ export default class DatasetMediator extends Observable {
                 card.displayNode.style.fontWeight = weight;
             }
         }
+    }
+    
+    getBrailleSettings() {
+        const slider = Slider.create(0, 1);
+        slider.setStep(0.01);
+        slider.value = 0.5;
+        slider.label("Unfilled Dot Size");
+        return slider;
+    }
+
+
+    brailleSettingsCallback() {
+        return (card, size) => {
+            card.displayNode.style.setProperty("--braille-small-dot-size", size);
+        };
     }
 
     teardown() {

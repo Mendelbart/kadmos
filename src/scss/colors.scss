@@ -70,7 +70,7 @@
   --text-yellow: hsl(59.2, 100%, 31.2%);
   --text-red: hsl(351.7, 98.8%, 33.1%);
 
-  --backdrop: #0003;
+  --backdrop: #00000038;
 }
 
 @mixin dark-mode {
@@ -115,7 +115,7 @@
   --clr-ribbon-button-checked-hover: var(--clr-text-soft);
 
   --clr-selector-button: transparent;
-  --clr-selector-button-text: hsla(0, 0%, 50%, 0.7);
+  --clr-selector-button-text: hsla(0, 0%, 50%, 0.8);
   --clr-selector-button-active-border: oklch(0.8 0.08 var(--accent-hue) / 0.3);
   --clr-selector-button-checked-active-symbol: hsl(0, 0%, 90%);
   --clr-selector-button-checked-active-label: hsl(0, 0%, 85%);
@@ -126,7 +126,7 @@
   --text-yellow: hsl(53.5, 98.1%, 59.4%);
   --text-red: hsl(351.5, 100%, 69.4%);
 
-  --backdrop: #0007;
+  --backdrop: #0009;
 }
 
 :root {

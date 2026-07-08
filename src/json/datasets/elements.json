@@ -3,7 +3,7 @@
   "name": "Atomic Elements",
   "metadata": {
     "_source": "https://en.wikipedia.org/wiki/List_of_chemical_elements",
-    "gameHeading": {"string": "KAtMoS", "font": "sans"},
+    "gameHeading": {"string": "KAtMoS", "font": "sans", "type": "elements"},
     "terms": {"letter": "element"}
   },
   "languages": {

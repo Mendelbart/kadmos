@@ -2,7 +2,7 @@
   "key": "phoenician",
   "name": "Phoenician",
   "metadata": {
-    "gameHeading": {"string": "\uD802\uDD12\uD802\uDD03\uD802\uDD0C"},
+    "gameHeading": {"string": "\uD802\uDD12\uD802\uDD03\uD802\uDD0C\uD802\uDD0E"},
     "lang": "phn",
     "dir": "rtl"
   },

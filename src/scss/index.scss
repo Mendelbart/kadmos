@@ -24,11 +24,16 @@ $bodyMaxWidth: 26rem;
 @import 'fontawesome';
 @import 'card';
 @import 'settings';
+@import 'braille';
 
 :root {
   --font-scale: 1;
   --font-shift: 0;
   --letter-spacing: 0ch;
+  --fg-color: var(--clr-text);
+
+  --braille-dot-size: .1875em;
+  --braille-small-dot-size: 0.33;
 }
 
 html {
@@ -41,6 +46,7 @@ body {
   color: var(--clr-text);
   font-family: system-ui, sans-serif;
   font-size: 1rem;
+  line-height: 1.2;
 
   max-width: $bodyMaxWidth;
   margin: auto;
@@ -130,7 +136,7 @@ h2 {
     .heading-element-number {
       font-size: .625rem;
       height: 1em;
-      margin-block-end: -.1rem;
+      margin-block-end: -.1875rem;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -279,7 +285,7 @@ select {
   }
 
   &::after {
-    content: "\f0d7";
+    content: "\f0d7" / "";
     font-family: FontAwesome;
     font-size: 1.125em;
     display: grid;
@@ -478,7 +484,11 @@ input[type="range"] {
 }
 
 
-#page-settings {
+dialog {
+  h1 {
+    font-size: 1.25rem;
+  }
+
   &::backdrop {
     background: var(--backdrop);
   }
@@ -616,6 +626,7 @@ input[type="range"] {
 .letter-string {
   text-wrap: nowrap;
   font-kerning: none;
+  color: var(--fg-color);
 }
 
 .letter-combination {
@@ -631,7 +642,7 @@ input[type="range"] {
   justify-content: start;
 
   .solution {
-    font-style: italic;
+    font-style: oblique;
     filter: brightness(87.5%);
   }
 

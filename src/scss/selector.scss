@@ -4,6 +4,7 @@ $selectorBorderRadius: .25rem;
   background-color: var(#{$clr-var-prefix});
   border-color: var(#{$clr-var-prefix}-border, transparent);
   color: var(#{$clr-var-prefix}-text);
+  --fg-color: var(#{$clr-var-prefix}-text);
 
   @media (hover: hover) {
     &:hover, &.hover {
@@ -46,6 +47,7 @@ $selectorBorderRadius: .25rem;
     &.selector-block-flex {
       display: flex;
       flex-wrap: wrap;
+      flex-wrap: balance;
       justify-content: center;
 
       .selector-button {
@@ -122,9 +124,11 @@ $selectorBorderRadius: .25rem;
       @include button-events("--clr-selector-button-checked");
 
       color: var(--clr-text);
+      --fg-color: var(--clr-text);
 
       &:active, &.active {
         color: var(--clr-selector-button-checked-active-symbol);
+        --fg-color: var(--clr-selector-button-checked-active-symbol);
         border-color: var(--clr-selector-button-checked-active-border);
       }
 
@@ -140,7 +144,7 @@ $selectorBorderRadius: .25rem;
     font-weight: 600;
     transform-origin: center;
 
-    --base-font-size: 1.4rem;
+    --base-font-size: 1.375rem;
   }
 
   .letter {

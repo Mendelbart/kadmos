@@ -10,6 +10,7 @@ export default class SettingCollection extends Observable {
          */
         this.map = new Map();
         this.node = createElement("div.settings");
+        this.node.role = "group";
     }
 
     /**

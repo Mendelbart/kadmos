@@ -145,11 +145,13 @@ export class CardFactory {
     /**
      * @param {CardFactory | function(Card, QuizItem, Record<string, *>)} display
      * @param {function(Card): void} [setup]
+     * @param {Record<string, *>} [config]
      */
-    constructor(display, setup) {
+    constructor(display, {setup, config} = {}) {
         if (typeof display === 'function') {
             this.displayCallback = display;
             if (setup) this.setup = setup;
+            this.config = {};
         } else {
             this.displayCallback = display.displayCallback;
             if (setup) {
@@ -160,9 +162,12 @@ export class CardFactory {
             } else {
                 this.setup = display.setup;
             }
+            this.config = display.config;
         }
 
-        this.config = {};
+        if (config) {
+            Object.assign(this.config, config);
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 {
   "arabic": {"name": "Arabic", "file": "arabic.json"},
   "elements": {"name": "Atomic Elements", "file": "elements.json"},
+  "braille": {"name": "Braille", "file": "braille.json"},
   "cyrillic": {"name": "Cyrillic", "file": "cyrillic.json"},
   "devanagari": {"name": "Devanagari", "file": "devanagari.json"},
   "elder_futhark": {"name": "Elder Futhark", "file": "elder_futhark.json"},
