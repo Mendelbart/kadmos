@@ -101,7 +101,6 @@
   {
     "family": "Noto Sans Devanagari",
     "fallback": "system-ui, sans-serif",
-    "shift": 0.12,
     "lineHeight": 1,
     "variationSettings": {
       "wght": "100 900",
@@ -111,7 +110,7 @@
   {
     "family": "Noto Serif Devanagari",
     "fallback": "serif",
-    "shift": 0.12,
+    "shift": 0.1,
     "lineHeight": 1,
     "variationSettings": {
       "wght": "100 900",

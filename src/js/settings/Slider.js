@@ -11,17 +11,15 @@ export default class Slider extends ValueElement {
     static updateEvent = "input";
     /**
      * @param {HTMLElement} node
-     * @param {number} min
-     * @param {number} max
      */
-    constructor(node, min, max) {
+    constructor(node) {
         super(node);
         if (this.valueNode.tagName !== "INPUT" || this.valueNode.type !== "range") {
             throw new Error("Couldn't find input type='range' element.");
         }
 
-        this.min = min;
-        this.max = max;
+        this.min = parseInt(this.valueNode.min);
+        this.max = parseInt(this.valueNode.max);
 
         this.displayValue = this.displayValue.bind(this);
         this.onChange = this.onChange.bind(this);
@@ -33,22 +31,26 @@ export default class Slider extends ValueElement {
     /**
      * @param {number} min
      * @param {number} max
-     * @param {?number} [value] default min
+     * @param {number} [value] default min
      * @returns {Slider}
      */
-    static create(min, max, value = null) {
+    static create(min, max, value) {
         const node = DOMUtils.getTemplate("slider");
-        const input = node.lastElementChild;
+        const input = node.querySelector("input");
         input.min = min;
         input.max = max;
-        input.setAttribute("step", 1);
 
-        const slider = new this(node, min, max);
-        if (value !== null) {
-            slider.value = value;
-        }
+        const slider = new this(node);
+        if (value != null) slider.value = value;
 
         return slider;
+    }
+
+    /**
+     * @param {number} step
+     */
+    setStep(step) {
+        this.valueNode.step = step;
     }
 
     onChange() {
@@ -71,10 +73,6 @@ export default class Slider extends ValueElement {
     displayMinMax() {
         this.node.querySelector(".range-min").textContent = this.formatValue(this.min);
         this.node.querySelector(".range-max").textContent = this.formatValue(this.max);
-    }
-
-    isCheckbox() {
-        return false;
     }
 
     /**
@@ -100,10 +98,12 @@ export default class Slider extends ValueElement {
         return (Math.round(value * 100) / 100).toString();
     }
 
+    /**
+     * @param {number} min
+     */
     setMin(min) {
         if (this.valueNode.value < min) {
-            this.valueNode.value = min;
-            this.onChange();
+            this.value = min;
         }
         this.min = min;
         this.valueNode.min = min;
@@ -111,10 +111,12 @@ export default class Slider extends ValueElement {
         this.displayMinMax();
     }
 
+    /**
+     * @param {number} max
+     */
     setMax(max) {
         if (this.valueNode.value > max) {
-            this.valueNode.value = max;
-            this.onChange();
+            this.value = max;
         }
         this.max = max;
         this.valueNode.max = max;

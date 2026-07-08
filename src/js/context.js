@@ -55,7 +55,10 @@ function setupDatasetSelect() {
 
     select.addEventListener("change", (e) => {
         Dataset.fetch(e.target.value).then(
-            dataset => DOMUtils.transition(() => selectDataset(dataset))
+            dataset => DOMUtils.transition(() => {
+                DOMUtils.unsetSearchParam("subset");
+                return selectDataset(dataset);
+            })
         ).catch(err => console.error(err));
     });
 }
@@ -100,28 +103,14 @@ function setupPageSettings() {
         if (changedKey) window.localStorage.setItem(changedKey, values[changedKey]);
     });
 
-    document.querySelector("#page-settings .settings").replaceChildren(PAGE_SETTINGS.node);
+    document.getElementById("page-settings")?.remove();
 
-    document.getElementById("page-settings").addEventListener("cancel", (event) => {
-        event.preventDefault();
-        DOMUtils.transition(hidePageSettings, ["page-settings", "ease-out"]);
-    });
-    document.getElementById("open-settings-button").addEventListener("click", () => {
-        DOMUtils.transition(showPageSettings, ["page-settings", "ease-in"]);
-    });
-    document.getElementById("close-settings-button").addEventListener("click", () => {
-        document.getElementById("page-settings").requestClose();
-    });
-}
-
-function showPageSettings() {
-    document.getElementById("page-settings").showModal();
-    document.documentElement.style.overflowY = "hidden";
-}
-
-function hidePageSettings() {
-    document.getElementById("page-settings").close();
-    document.documentElement.style.removeProperty("overflow-y");
+    const dialog = DOMUtils.createDialog(
+        "Settings", PAGE_SETTINGS.node,
+        document.getElementById("open-settings-button")
+    );
+    dialog.id = "page-settings";
+    document.body.append(dialog);
 }
 
 
@@ -241,10 +230,7 @@ function selectDataset(dataset) {
     DOMUtils.setSearchParams({dataset: dataset.key});
     updateDocumentTitle();
 
-    return Promise.all([
-        DATASET.getFont(DATASET.metadata.gameHeading.font).load(),
-        DATASET.getSelectorDisplayFont().load()
-    ]).then(() => {
+    return DATASET.loadFonts().then(() => {
         setupTerms();
 
         DOMUtils.showPage(document.getElementById('game-filters'));
@@ -272,7 +258,11 @@ function setupTerms() {
 function setupDSM() {
     DSM?.teardown();
 
-    DSM = new DatasetMediator(DATASET);
+    DSM = new DatasetMediator(DATASET, {subset: DOMUtils.getSearchParam("subset")});
+    if (DATASET.hasSetting("subset")) {
+        DOMUtils.setSearchParams({subset: DSM.subsetSetting.value});
+        DSM.subsetSetting.observers.push(value => DOMUtils.setSearchParams({subset: value}));
+    }
 
     DSM.selector.observers.push(checkPagesNextButton);
     DSM.observers.push(saveSettings);
@@ -364,6 +354,9 @@ function saveSettings(values) {
     if (values.checked) {
         values.checked = encodeBase64BoolArray(values.checked);
     }
+    if (values.combineKeys) {
+        values.combineKeys = values.combineKeys.join(",");
+    }
 
     window.localStorage.setItem(localStorageSettingsKey(), JSON.stringify(values));
 }
@@ -376,11 +369,14 @@ function getCachedSettings() {
     if (!settingsJSON) return {};
 
     try {
-        const settings = JSON.parse(settingsJSON);
-        if (typeof settings.checked === "string") {
-            settings.checked = decodeBase64BoolArray(settings.checked);
+        const values = JSON.parse(settingsJSON);
+        if (typeof values.checked === "string") {
+            values.checked = decodeBase64BoolArray(values.checked);
         }
-        return settings;
+        if (values.combineKeys) {
+            values.combineKeys = values.combineKeys.split(",");
+        }
+        return values;
     } catch (e) {
         console.error(e);
         return {};

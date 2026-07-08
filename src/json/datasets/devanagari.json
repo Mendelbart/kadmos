@@ -2,7 +2,7 @@
   "key": "devanagari",
   "name": "Devanagari",
   "metadata": {
-    "gameHeading": {"string":  "कैडमस"},
+    "gameHeading": {"string":  "कैडमोस"},
     "lang": "hi",
     "dir": "ltr"
   },
@@ -20,10 +20,29 @@
     }
   },
   "combine": {
-    "from": [
-      {"subset": "consonant"},
-      {"subset": "vowel", "form": "dia"}
-    ]
+    "methods": {
+      "syllable": {
+        "label": "Syllable",
+        "subsets": ["consonants", "vowels"],
+        "letterConfig": [
+          null,
+          {"form": "dia"}
+        ],
+        "properties": {
+          "transl": {
+            "sources": ["transl", "transl"]
+          }
+        }
+      },
+      "single-dia": {
+        "label": "Diacritic Template",
+        "subsets": ["vowels"],
+        "letterConfig": [{"form": "dia"}],
+        "templates": [
+          [[""], "◌"]
+        ]
+      }
+    }
   },
   "subsets": {
     "consonants": {
@@ -113,7 +132,7 @@
       "forms": {
         "data": {
           "ind": {"label": "Independent"},
-          "dia": {"label": "Diacritic", "combine": true}
+          "dia": {"label": "Diacritic", "combine": ["single-dia", "syllable"]}
         },
         "exclusive": true,
         "label": "Form"

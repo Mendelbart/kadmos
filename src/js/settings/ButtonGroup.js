@@ -58,7 +58,7 @@ export default class ButtonGroup extends Observable {
         const container = DOMUtils.getTemplate("buttonGroupContainer");
 
         if (exclusive) {
-            container.setAttribute("role", "radiogroup");
+            container.role = "radiogroup";
 
             if (typeof checked === "string") checked = [checked];
 

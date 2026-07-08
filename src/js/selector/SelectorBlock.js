@@ -60,6 +60,8 @@ export default class SelectorBlock extends Observable {
         });
 
         button.dataset.index = index.toString();
+        button.append(DOMUtils.createElement("div.selector-button-content"));
+
         return button;
     }
 
@@ -86,8 +88,7 @@ export default class SelectorBlock extends Observable {
     setupButtonContents(callback) {
         this.items.forEach((item, index) => {
             const content = callback(item, index);
-            content.classList.add("selector-button-content");
-            this.buttons[index].prepend(content);
+            this.buttons[index].firstElementChild.replaceChildren(content);
         });
     }
 
@@ -139,7 +140,7 @@ export default class SelectorBlock extends Observable {
      */
     updateButtonContents(callback) {
         for (const [index, button] of this.buttons.entries()) {
-            callback(button.querySelector(".selector-button-content"), this.items[index], index);
+            callback(button.querySelector(".selector-button-content").firstElementChild, this.items[index], index);
         }
         this.contentFitter.updateChildren();
     }

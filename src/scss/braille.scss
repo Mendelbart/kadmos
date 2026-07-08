@@ -1,0 +1,31 @@
+.braille-cells {
+  display: flex;
+  flex-direction: row;
+}
+
+.braille-cell {
+  display: grid;
+  --dot-size: var(--braille-dot-size); // fallback
+  --dot-size: round(var(--braille-dot-size), 1px);
+
+  --small-dot-size: calc(var(--braille-small-dot-size) * var(--dot-size)); // fallback
+  --small-dot-size: calc(var(--dot-size) - round((1 - var(--braille-small-dot-size)) * var(--dot-size), 2px));
+
+  gap: var(--dot-size);
+  grid: repeat(3, var(--dot-size)) / repeat(2, var(--dot-size));
+  grid-auto-flow: column;
+  place-items: center;
+  padding: var(--dot-size);
+}
+
+.braille-dot {
+  width: var(--dot-size);
+  aspect-ratio: 1;
+  border-radius: 100%;
+  background: var(--fg-color);
+
+  &.unfilled {
+    width: var(--small-dot-size);
+    opacity: 25%;
+  }
+}

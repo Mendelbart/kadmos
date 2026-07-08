@@ -72,7 +72,8 @@ export function button(type, value, labelContent, id) {
         value: value,
         id: id
     });
-    label.setAttribute("for", id);
+    label.htmlFor = id;
+    label.tabIndex = 0;
 
     if (labelContent) {
         if (typeof labelContent === "string") {
@@ -183,16 +184,19 @@ export function setOptions(select, data, {
     }
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string} selected
+ * @param {string[]} disabled
+ * @returns {HTMLOptionElement}
+ */
 function createOption(key, value, selected, disabled) {
     const option = document.createElement("OPTION");
     option.value = key;
     option.textContent = value;
-    if (selected === key) {
-        option.selected = "selected";
-    }
-    if (disabled.includes(key)) {
-        option.disabled = "disabled";
-    }
+    if (selected === key) option.selected = "selected";
+    if (disabled.includes(key)) option.disabled = "disabled";
     return option;
 }
 
@@ -236,17 +240,26 @@ const booleanAttributes = new Set([
  */
 export function setAttrs(element, attrs) {
     for (const [key, value] of Object.entries(attrs)) {
-        if (booleanAttributes.has(key)) {
-            if (value) {
-                element.setAttribute(key, key);
-            } else {
-                element.removeAttribute(key);
-            }
-        } else if (key === "class") {
-            addClass(element, value);
+        setAttr(element, key, value);
+    }
+}
+
+/**
+ * @param {Element} element
+ * @param {string} key
+ * @param {string | boolean} value
+ */
+export function setAttr(element, key, value) {
+    if (booleanAttributes.has(key)) {
+        if (value) {
+            element.setAttribute(key, key);
         } else {
-            element.setAttribute(key, value);
+            element.removeAttribute(key);
         }
+    } else if (key === "class") {
+        addClass(element, value);
+    } else {
+        element.setAttribute(key, value);
     }
 }
 
@@ -500,6 +513,75 @@ function ribbonButtonsChangeListener(event) {
 }
 
 
+registerTemplate("dialog",
+`<dialog closedby="any">
+    <div class="heading-with-buttons">
+        <h1></h1>
+        <button type="button" class="icon-button dialog-close-button" aria-label="Close"><i class="fa fa-xmark"></i></button>
+    </div>
+    <div class="dialog-content"></div>
+</dialog>`)
+let dialogCount = 0;
+
+/**
+ * @param {string} heading
+ * @param {Node | string} content
+ * @param {HTMLElement} [openButton]
+ * @returns {HTMLDialogElement}
+ */
+export function createDialog(heading, content, openButton) {
+    const dialog = getTemplate("dialog");
+    const h1 = dialog.querySelector("h1");
+    h1.textContent = heading;
+    dialog.querySelector(".dialog-content").append(content);
+    setupDialog(dialog, {
+        close: dialog.querySelector(".dialog-close-button"),
+        open: openButton
+    });
+
+    dialogCount++;
+    const id = "dialog" + dialogCount;
+    const headingId = id + "heading";
+    h1.id = headingId;
+    dialog.setAttribute("aria-labelledby", headingId);
+
+    return dialog;
+}
+
+/**
+ * @param {HTMLDialogElement} dialog
+ * @param {{open?: HTMLElement, close?: HTMLElement}} [buttons]
+ */
+export function setupDialog(dialog, buttons = {}) {
+    dialog.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        hideDialog(dialog);
+    });
+    buttons.open?.addEventListener("click", () => showDialog(dialog));
+    buttons.close?.addEventListener("click", () => hideDialog(dialog));
+}
+
+/**
+ * @param {HTMLDialogElement} dialog
+ */
+function showDialog(dialog) {
+    transition(() => {
+        dialog.showModal();
+        document.documentElement.style.overflowY = "hidden";
+    }, ["dialog", "ease-in"]);
+}
+
+/**
+ * @param {HTMLDialogElement} dialog
+ */
+function hideDialog(dialog) {
+    transition(() => {
+        dialog.close();
+        document.documentElement.style.removeProperty("overflow-y");
+    }, ["dialog", "ease-out"]);
+}
+
+
 /**
  * @param {Record<string, string|number|boolean>} params
  */
@@ -535,6 +617,15 @@ export function unsetSearchParam(...keys) {
     if (hasChanged) {
         history.pushState({}, "", url);
     }
+}
+
+export function hasSearchParam(key) {
+    return new URL(location).searchParams.has(key);
+}
+
+
+export function getSearchParam(key) {
+    return new URL(location).searchParams.get(key);
 }
 
 

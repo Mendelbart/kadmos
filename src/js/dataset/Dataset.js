@@ -3,6 +3,7 @@ import {SettingCollection, ButtonGroup} from "../settings";
 import DATASETS_METADATA from '../../json/datasets_meta.json';
 import {Font} from "../utils/font";
 import DatasetSubset from "./DatasetSubset";
+import {BrailleString, StringCombiner} from "../letter";
 
 DOMUtils.registerTemplate(
     "headingElement",
@@ -79,14 +80,16 @@ export class Dataset {
     constructor(data) {
         this.key = data.key;
         this.name = data.name;
+        this.letterType = data.letterType ?? "string";
         this.metadata = this.processMetadata(data.metadata);
-        this.fonts = this.processFonts(data.fonts);
+        if (data.fonts) this.fonts = this.processFonts(data.fonts);
         this.languages = data.languages ?? DEFAULT_LANGUAGES;
         this.languages.default ??= this.languages.keys[0];
 
         this.gameConfig = data.game ?? {};
         this.variants = data.variants;
         this.subsets = this.processSubsets(data);
+        this.combine = this.processCombine(data.combine);
     }
 
     /**
@@ -145,6 +148,7 @@ export class Dataset {
         const subsets = {};
         for (const [key, subset] of Object.entries(data.subsets)) {
             if (subset.variants) subset.variants = this.applyGlobalVariants(subset.variants, this.variants);
+            subset.letterType = this.letterType;
             subsets[key] = new DatasetSubset(key, subset);
         }
         return subsets;
@@ -155,10 +159,37 @@ export class Dataset {
         const result = Object.assign({}, globalVariants);
         result.data = {};
         for (const [key, letters] of Object.entries(variants.data)) {
-            result.data[key] = Object.assign({}, globalVariants.data[key], {"letters": letters});
+            result.data[key] = Object.assign({}, globalVariants.data[key], {letters: letters});
         }
         result.defaultLetterKey = variants.defaultLetterKey ?? globalVariants.defaultLetterKey;
         return result;
+    }
+
+    /**
+     * @param combine
+     * @return {?Record<string, *>}
+     */
+    processCombine(combine) {
+        if (!combine) return null;
+
+        for (const method of Object.values(combine.methods)) {
+            method.combiner = new StringCombiner(method.subsets.length, method.templates, method.regExpFlags);
+
+            if (method.properties === "auto" || !method.properties) {
+                method.properties = {};
+                for (const key of Object.keys(this.subsets[method.subsets[0]].properties)) {
+                    if (method.subsets.every(k => k in this.subsets[k].properties)) {
+                        method.properties[key] = {sources: method.subsets.map(() => key)};
+                    }
+                }
+            }
+
+            for (const config of Object.values(method.properties)) {
+                config.combiner = new StringCombiner(config.sources.length, config.templates, config.regExpFlags);
+            }
+        }
+
+        return combine;
     }
 
 
@@ -260,7 +291,78 @@ export class Dataset {
         return Object.values(this.subsets)[0];
     }
 
+    /**
+     * @param {string} subset
+     * @param {string} form
+     * @param {string} [checked]
+     * @returns {ButtonGroup}
+     */
+    combineMethodSetting(subset, form, checked) {
+        /** @type {string | string[]} */
+        let keys = this.subsets[subset].combineMethods(form);
+        if (!keys) throw new Error("Form doesn't use combine.");
+        if (typeof keys === "string") keys = [keys];
+
+        return ButtonGroup.from(
+            ObjectUtils.map(
+                ObjectUtils.onlyKeys(this.combine.methods, keys),
+                (method, key) => method.label || key
+            ),
+            {exclusive: true, checked: checked || keys[0]}
+        );
+    }
+
+    /**
+     * @param {string} method
+     * @param {string} subset
+     * @param {number[]} [selected]
+     * @return {SettingCollection}
+     */
+    combineLettersSettings(method, subset, selected) {
+        const sc = new SettingCollection();
+        const config = this.combine.methods[method];
+        const letterConfig = config.letterConfig || new Array(config.subsets.length).fill(null);
+
+        for (const [index, ss] of config.subsets.entries()) {
+            if (ss === subset) continue;
+            const setting = this.subsets[ss].letterSelect(Object.assign({}, letterConfig, {selected: selected ? selected[index] : null}));
+            sc.add(index, setting);
+        }
+
+        return sc;
+    }
+
+    /**
+     * @param {string} method
+     * @param {string[]} combineKeys
+     * @returns {(string | null)[]}
+     */
+    getCombineLetters(method, combineKeys) {
+        const config = this.combine.methods[method];
+        return config.subsets.map((ss, index) => {
+            const key = combineKeys[index];
+            if (key == null) return null;
+            const form = config.letterConfig ? config.letterConfig[index] : null;
+            return this.subsets[ss].getLetterForm(parseInt(key), form).nodeable.string;
+        });
+    }
+
     // ============================= FONTS ====================================
+    hasFonts() {
+        return !!this.fonts;
+    }
+    
+    loadFonts() {
+        if (this.hasFonts()) {
+            return Promise.all([
+                this.getFont(this.metadata.gameHeading.font).load(),
+                this.getSelectorDisplayFont().load()
+            ]);
+        } else {
+            return Promise.resolve();
+        }
+    }
+
     /**
      * @param {string | Record<string, *>} font
      * @param {string} [variant]
@@ -332,28 +434,34 @@ export class Dataset {
      */
     getGameHeading(variant) {
         const data = this.metadata.gameHeading;
-        const font = this.getFont(data.font, variant);
+        const {type, lang, dir, string} = data;
+        if (!type || type === "string" || type === "elements") {
+            const font = this.getFont(data.font, variant);
 
-        if (this.key === "elements") {
-            const container = document.createElement("div");
-            container.classList.add("element-heading-container");
-            const els = [];
-            for (const [no, symbol] of [[19, "K"], [85, "At"], [42, "Mo"], [16, "S"]]) {
-                const el = DOMUtils.getTemplate("headingElement");
-                el.querySelector(".heading-element-symbol").textContent = symbol;
-                el.querySelector(".heading-element-number").textContent = no;
-                els.push(el);
+            if (type === "elements") {
+                const container = document.createElement("div");
+                container.classList.add("element-heading-container");
+                const els = [];
+                for (const [no, symbol] of [[19, "K"], [85, "At"], [42, "Mo"], [16, "S"]]) {
+                    const el = DOMUtils.getTemplate("headingElement");
+                    el.querySelector(".heading-element-symbol").textContent = symbol;
+                    el.querySelector(".heading-element-number").textContent = no;
+                    els.push(el);
+                }
+                container.replaceChildren(...els);
+                font.applyTo(container);
+
+                return container;
             }
-            container.replaceChildren(...els);
-            font.applyTo(container);
 
-            return container;
+            const span = DOMUtils.createElement("span", string ?? "Kadmos");
+            span.setAttribute("lang", lang ?? this.getLang());
+            span.setAttribute("dir", dir ?? this.getDir());
+            font.applyTo(span);
+
+            return span;
+        } else if (type === "braille") {
+            return new BrailleString(string, 0, "bla").getNode();
         }
-
-        const span = DOMUtils.createElement("span", data.string ?? "Kadmos");
-        span.setAttribute("lang", data.lang ?? this.getLang());
-        span.setAttribute("dir", data.dir ?? this.getDir());
-        font.applyTo(span);
-        return span;
     }
 }

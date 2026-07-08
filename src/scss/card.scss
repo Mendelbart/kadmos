@@ -44,6 +44,8 @@ $borderRadiusSmall: .5rem;
 
   min-width: calc(var(--base-font-size) * 1);
   max-width: calc(var(--base-font-size) * 1.5);
+
+  --fg-color: var(--clr-text);
 }
 
 .qc-label {

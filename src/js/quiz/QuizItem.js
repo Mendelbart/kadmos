@@ -3,7 +3,7 @@ import {avg} from "../utils/array";
 
 export default class QuizItem {
     /**
-     * @param {CardContent} content
+     * @param {Nodeable} content
      * @param {Record<string, QuizAnswer>} answers
      */
     constructor(content, answers) {

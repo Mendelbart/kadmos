@@ -1,17 +1,19 @@
 import {Matrix, ObjectUtils, ParametricValue} from "../utils";
 import {range} from "../utils/array";
 import {DefaultListSplitter, QuizAnswerFactory} from "../quiz/answer";
-import {LetterCombination, StringLetter} from "./letter";
+import {LetterCombination, Letter, createNodeable} from "../letter";
 import {Selector, SelectorBlock, SelectorGridBlock} from "../selector";
 import {completeIndexSubsets, containsDuplicates, parseMatrixRanges, parseRanges} from "../utils/indices";
 import {ButtonGroup, ValueElement, SettingCollection} from "../settings";
 import QuizItem from '../quiz/QuizItem';
 
 
+export const DEFAULT_FORM_KEY = "0";
 const DEFAULT_FORMS = {
-    data: {default: "Default"},
+    data: {},
     exclusive: false
 };
+DEFAULT_FORMS.data[DEFAULT_FORM_KEY] = "Default";
 
 
 
@@ -24,13 +26,15 @@ export default class DatasetSubset {
      * @param selector
      * @param [forms]
      * @param [variants]
+     * @param [letterType]
      */
-    constructor(key, {label, forms, properties, items, selector, variants}) {
+    constructor(key, {label, forms, properties, items, selector, variants, letterType = "string"}) {
         this.key = key;
         this.label = label;
         this.forms = this.processForms(forms);
         this.properties = this.processProperties(properties);
         this.variants = variants;
+        this.letterType = letterType;
 
         this.items = this.processItems(items);
         /** @type {Record<string, Map<*, number>>} */
@@ -103,8 +107,8 @@ export default class DatasetSubset {
             return [prop, params];
         });
 
-        return data.map(([forms, propValues], index) => new DatasetItem(
-            this.processLetterForms(forms, index),
+        return data.map(([forms, propValues]) => new DatasetItem(
+            this.processLetterForms(forms),
             this.processItemProperties(propParams, propValues)
         ));
     }
@@ -159,12 +163,11 @@ export default class DatasetSubset {
 
     /**
      * @param {any} display
-     * @param {string|number} key
-     * @returns {Record<string, Letter>}
+     * @returns {Record<string, Nodeable>}
      */
-    processLetterForms(display, key) {
+    processLetterForms(display) {
         display = this.standardizeLetterForms(display);
-        return ObjectUtils.map(display, (str, form) => new StringLetter(str, key, form));
+        return ObjectUtils.map(display, str => createNodeable(this.letterType, str));
     }
 
     hasSetting(key) {
@@ -274,7 +277,7 @@ export default class DatasetSubset {
      */
     createFormIndexMap(formKey) {
         return new Map(this.items.map(
-            (item, index) => [item.forms[formKey].data, index]
+            (item, index) => [item.forms[formKey].stringValue(), index]
         ));
     }
 
@@ -461,7 +464,13 @@ export default class DatasetSubset {
         return keys;
     }
 
-
+    getSelectorItemLabel(index) {
+        const property = this.selectorData.label.property;
+        return this.items[index].getProperty({
+            property,
+            splitter: this.getPropertySplitter(property)
+        })
+    }
 
     // =================================== QUIZ ITEMS ===================================
     getAnswerFactories() {
@@ -508,12 +517,58 @@ export default class DatasetSubset {
         ));
     }
 
+    defaultFormKey() {
+        return Object.keys(this.forms.data)[0];
+    }
+
+    getFormConfig(form) {
+        form ??= this.defaultFormKey();
+        return this.forms.data[form];
+    }
+
+    /**
+     * @param {string} form
+     * @return {string[] | undefined}
+     */
+    combineMethods(form) {
+        return this.getFormConfig(form).combine;
+    }
+
+    /**
+     * @param {string} [form]
+     * @param {number} [selected]
+     * @return {ValueElement}
+     */
+    letterSelect({form, selected} = {}) {
+        form ??= this.defaultFormKey();
+        return ValueElement.createSelect(
+            Object.fromEntries(
+                this.items
+                    .map((item, index) => [index, item])
+                    .filter(([_, item]) => item.hasForm(form))
+                    .map(([index, item]) => [
+                        index,
+                        item.getForm(form).stringValue() + " – " + this.getSelectorItemLabel(index)
+                    ])
+            ),
+            {selected}
+        );
+    }
+
+    /**
+     * @param {number} index
+     * @param {string} [form]
+     * @return {Letter}
+     */
+    getLetterForm(index, form) {
+        return this.items[index].getForm(form ?? this.defaultFormKey());
+    }
 }
 
 
 class DatasetItem {
     /**
-     * @param {Record<string, Letter>} forms
+     * @param {Record<string, Nodeable>} forms
      * @param {Record<string, ParametricValue>} properties
      */
     constructor(forms, properties) {
@@ -545,7 +600,7 @@ class DatasetItem {
      * @returns {Letter}
      */
     getForm(form) {
-        return this.forms[form];
+        return new Letter(this.forms[form], form);
     }
 
     /**

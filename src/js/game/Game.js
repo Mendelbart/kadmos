@@ -22,15 +22,22 @@ export default class Game {
      */
     constructor(dealer, cardFactory) {
         this.dealer = dealer;
-        this.cardFactory = new CardFactory(cardFactory, card => {
-            card.node.classList.add("game-main-card");
-            this._setupCard(card);
+        this.cardFactory = new CardFactory(cardFactory, {
+            setup: card => {
+                card.node.classList.add("game-main-card");
+                this._setupCard(card);
+            }
         });
         this.onFinish = new FunctionSet();
 
         this.cardDisplayMeta = {};
         this.keepKeyboardOpen = false;
+        this.referenceCards = [];
         this.updateProgressBar();
+
+        /** @type {[SettingCollection | Setting, function][]} */
+        this.cardSettings = [];
+        document.getElementById("font-settings").replaceChildren();
 
         /** @type {Card} */
         this.mainCard = this.cardFactory.createCard();
@@ -50,24 +57,22 @@ export default class Game {
      * @returns {Card[]}
      */
     allCards() {
-        return [this.mainCard];
+        return [this.mainCard].concat(this.referenceCards);
     }
 
     /**
-     * @param {SettingCollection} settings
-     * @param {function(Card, Record<string, *>, string?): void} applySettings
+     * @param {SettingCollection | Setting} settings
+     * @param {function(Card, any, string?): void} applySettings
      */
-    setupCardSettings(settings, applySettings) {
-        this.cardSettings = settings;
-        this.applyCardSettingsCallback = applySettings;
-
-        this.cardSettings.observers.push((values, updatedKey) => {
+    addCardSettings(settings, applySettings) {
+        this.cardSettings.push([settings, applySettings]);
+        settings.observers.push((...args) => {
             for (const card of this.allCards()) {
-                this.applyCardSettingsCallback(card, values, updatedKey);
+                applySettings(card, ...args);
             }
         });
 
-        document.getElementById("font-settings").replaceChildren(this.cardSettings.node);
+        document.getElementById("font-settings").append(settings.node);
 
         for (const card of this.allCards()) {
             this.applyCardSettings(card);
@@ -75,7 +80,9 @@ export default class Game {
     }
 
     applyCardSettings(card) {
-        if (this.cardSettings) this.applyCardSettingsCallback(card, this.cardSettings.getValues());
+        for (const [settings, applySettings] of this.cardSettings) {
+            applySettings(card, settings instanceof SettingCollection ? settings.getValues() : settings.value);
+        }
     }
 
     setCardDisplayMeta(data) {
@@ -180,12 +187,17 @@ export default class Game {
     finish() {
         setTimeout(() => this.cleanup(), 100);
         this.onFinish.call();
+        this.teardown();
+    }
+
+    teardown() {
+        document.getElementById("font-settings").replaceChildren();
     }
 
     submitRound() {
         const item = this.dealer.currentItem;
         const grades = {};
-        let hasReferenceCards = false;
+        this.referenceCards = [];
 
         for (const [key, input] of Object.entries(this.inputs)) {
             const guess = input.value;
@@ -200,10 +212,8 @@ export default class Game {
 
             if (!passes(grade)) {
                 const referenceItems = this.getReferenceItems(key, guess);
-                if (referenceItems.length > 0) hasReferenceCards = true;
-
-                const referenceCards = this.referenceCards(referenceItems, key);
-                document.getElementById("game-reference-cards").append(...referenceCards.map(card => card.node));
+                this.referenceCards = this.getReferenceCards(referenceItems, key);
+                document.getElementById("game-reference-cards").append(...this.referenceCards.map(card => card.node));
 
                 // // doesn't make sense, cause the referenceItems are not the same as the game items.
                 // for (const item of referenceItems) {
@@ -212,7 +222,7 @@ export default class Game {
             }
         }
 
-        if (hasReferenceCards) DOMUtils.show(document.getElementById("game-reference-cards"));
+        if (this.referenceCards.length > 0) DOMUtils.show(document.getElementById("game-reference-cards"));
 
         const score = avg(Object.values(grades));
         this.dealer.submitScore(score);
@@ -232,9 +242,11 @@ export default class Game {
      */
     setReferenceItems(items, factory) {
         this.referenceItems = items;
-        this.referenceCardFactory = new CardFactory(factory, card => {
-            card.node.classList.add("game-reference-card");
-            this._setupCard(card);
+        this.referenceCardFactory = new CardFactory(factory, {
+            setup: card => {
+                card.node.classList.add("game-reference-card");
+                this._setupCard(card);
+            }
         });
     }
 
@@ -263,8 +275,8 @@ export default class Game {
      * @param {string} property
      * @returns {Card[]}
      */
-    referenceCards(referenceItems, property) {
-        this.referenceCardFactory.setDisplayArgs(property);
+    getReferenceCards(referenceItems, property) {
+        this.referenceCardFactory.setConfig("property", property);
         return referenceItems.map(item => this.referenceCardFactory.createCard(item));
     }
 
