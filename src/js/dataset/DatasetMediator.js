@@ -439,8 +439,8 @@ export default class DatasetMediator extends Observable {
     
     getBrailleSettings() {
         const slider = Slider.create(0, 1);
-        slider.setStep(0.01);
-        slider.value = 0.5;
+        slider.setStep(0.05);
+        slider.value = 0.35;
         slider.label("Unfilled Dot Size");
         return slider;
     }

@@ -681,3 +681,17 @@ function isMobileBrowser() {
     return check;
 }
 window.isMobile = isMobileBrowser();
+
+
+let pixelRatioMediaQuery;
+function updatePixelRatio() {
+    if (pixelRatioMediaQuery) pixelRatioMediaQuery.removeEventListener("change", updatePixelRatio);
+    pixelRatioMediaQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    pixelRatioMediaQuery.addEventListener("change", updatePixelRatio);
+
+    document.documentElement.style.setProperty("--device-pixel-ratio", window.devicePixelRatio);
+}
+
+export function trackDevicePixelRatio() {
+    updatePixelRatio();
+}

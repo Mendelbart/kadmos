@@ -6,10 +6,10 @@
 .braille-cell {
   display: grid;
   --dot-size: var(--braille-dot-size); // fallback
-  --dot-size: round(var(--braille-dot-size), 1px);
+  --dot-size: round(var(--braille-dot-size), var(--device-pixel));
 
   --small-dot-size: calc(var(--braille-small-dot-size) * var(--dot-size)); // fallback
-  --small-dot-size: calc(var(--dot-size) - round((1 - var(--braille-small-dot-size)) * var(--dot-size), 2px));
+  --small-dot-size: calc(var(--dot-size) - round((1 - var(--braille-small-dot-size)) * var(--dot-size), calc(2 * var(--device-pixel))));
 
   gap: var(--dot-size);
   grid: repeat(3, var(--dot-size)) / repeat(2, var(--dot-size));
@@ -26,6 +26,6 @@
 
   &.unfilled {
     width: var(--small-dot-size);
-    opacity: 25%;
+    opacity: calc(30% - var(--braille-small-dot-size) * 15%);
   }
 }
