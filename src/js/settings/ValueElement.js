@@ -1,5 +1,6 @@
 import {DOMUtils, Observable} from "../utils";
 
+let IdCount = 0;
 /**
  * @interface Setting
  * @extends Observable
@@ -21,7 +22,6 @@ import {DOMUtils, Observable} from "../utils";
  * @name Setting#remove
  */
 
-let IdCount = 0;
 /** @implements Setting */
 export default class ValueElement extends Observable {
     static updateEvent = "change"

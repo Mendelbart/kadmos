@@ -38,6 +38,7 @@ $bodyMaxWidth: 26rem;
 
 html {
   background-color: var(--clr-background);
+  --device-pixel: calc(1px / var(--device-pixel-ratio, 1));
 }
 
 body {
@@ -308,10 +309,11 @@ input[type="range"] {
   width: 100%;
   background: transparent;
   cursor: pointer;
+  height: .5rem;
 
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
-    margin-top: -.2rem;
+    margin-top: -.25rem;
     color: white;
     background: white;
     box-shadow: 0 0 .25rem hsla(0, 0%, 0%, 0.5);
@@ -331,13 +333,13 @@ input[type="range"] {
 
   &::-webkit-slider-runnable-track {
     background: #{'linear-gradient(to right, var(--accent-bg) calc(var(--range-progress) * 100%), var(--clr-range) calc(var(--range-progress) * 100%))'};
-    height: .6rem;
+    height: .5rem;
     border-radius: $borderRadiusSmall;
   }
 
   &::-moz-range-track {
     background: #{'linear-gradient(to right, var(--accent-bg) calc(var(--range-progress) * 100%), var(--clr-range) calc(var(--range-progress) * 100%))'};
-    height: .6rem;
+    height: .5rem;
     border-radius: $borderRadiusSmall;
   }
 
@@ -348,7 +350,7 @@ input[type="range"] {
 
 
 .slider-container {
-  margin-block: -.25rem;
+  margin-block-start: -.1875rem;
   position: relative;
 
   .range-min, .range-max {

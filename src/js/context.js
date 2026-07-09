@@ -21,6 +21,8 @@ const GENERIC_GAME_SETTINGS = Game.genericSettings();
 let PAGE_SETTINGS;
 
 
+DOMUtils.trackDevicePixelRatio();
+
 /******************** SETUP ***********************/
 export function setup() {
     setupPageSettings();
