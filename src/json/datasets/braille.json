@@ -71,16 +71,16 @@
       "items": {
         "properties": ["digit"],
         "data": [
-          ["A", "1"],
-          ["B", "2"],
-          ["C", "3"],
-          ["D", "4"],
-          ["E", "5"],
-          ["F", "6"],
-          ["G", "7"],
-          ["H", "8"],
-          ["I", "9"],
-          ["J", "0"]
+          ["#A", "1"],
+          ["#B", "2"],
+          ["#C", "3"],
+          ["#D", "4"],
+          ["#E", "5"],
+          ["#F", "6"],
+          ["#G", "7"],
+          ["#H", "8"],
+          ["#I", "9"],
+          ["#J", "0"]
         ]
       },
       "selector": {
@@ -88,12 +88,103 @@
           "property": "digit"
         },
         "style": {
-          "buttonWidth": "2.25rem"
+          "buttonWidth": "2.75rem"
         },
         "block": {
           "dimensions": [2, 5],
           "grid": true
         }
+      }
+    },
+    "prefix": {
+      "label": "Prefixes",
+      "properties": {
+        "prefix": {
+          "label": "Prefix",
+          "config": {
+            "type": "list",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["prefix"],
+        "data": [
+          ["#", "number"],
+          [",", "uppercase"],
+          [".", "italic"],
+          [";", "grade 1"],
+          ["^", "bold, currency"],
+          ["_", "underline"],
+          ["@", "accent, script"],
+          ["2", "symbol"],
+          ["1", "word"],
+          ["7", "passage"],
+          ["'", "terminator"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "prefix",
+          "splitFirst": false
+        },
+        "style": {
+          "buttonWidth": "3.5rem"
+        },
+        "blocks": [
+          {"letters": {"i1": "1:7"}},
+          {"letters": {"i1": "8:11"}}
+        ]
+      }
+    },
+    "punc": {
+      "label": "Punctuation",
+      "properties": {
+        "punc": {
+          "label": "Punctuation",
+          "config": {
+            "type": "string"
+          },
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["punc"],
+        "data": [
+          ["1", ","],
+          ["2", ";"],
+          ["3", ":"],
+          ["4", "."],
+          ["6", "!"],
+          ["8", "?"],
+          ["-", "-"],
+          ["'", "'"],
+          ["_/", "/"],
+          ["_*", "\\"],
+          ["\"<", "("],
+          ["\">", ")"],
+          [".<", "["],
+          [".>", "]"],
+          ["_<", "{"],
+          ["_>", "}"],
+          ["@<", "<"],
+          ["@>", ">"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "punc"
+        },
+        "style": {
+          "buttonWidth": "2.75rem"
+        },
+        "blocks": [
+          {"letters": {"i1": "1:8"}},
+          {"letters": {"i1": "9:18"}}
+        ]
       }
     }
   }

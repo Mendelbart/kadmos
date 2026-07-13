@@ -1,4 +1,4 @@
-import {DOMUtils, Observable} from '../utils';
+import {DOMUtils, Observable, ObjectUtils} from '../utils';
 import Game from "../game/Game";
 import QuizDealer from "../quiz/QuizDealer";
 import {CardFactory} from "../quiz/card";
@@ -8,65 +8,115 @@ import {SettingCollection, Slider} from "../settings";
 export default class DatasetMediator extends Observable {
     /**
      * @param {Dataset} dataset
-     * @param {string} [subset]
+     * @param [settingsCache]
+     * @param [settingsValues]
      */
-    constructor(dataset, {subset}) {
+    constructor(dataset, settingsCache = {}, settingsValues = {}) {
         super();
         this.dataset = dataset;
+        /**
+         * @type {{selector: SettingCollection, game: SettingCollection, subset?: ButtonGroup, combine?: {method: ButtonGroup, keys?: SettingCollection}}}
+         */
+        this.settings = {};
+        const subsetKey = this.dataset.getSubset(settingsValues.subset).key;
+        this.settingsCache = this.updateCacheToValues(this.normalizeCache(settingsCache), settingsValues, subsetKey);
+
+        this.updateSubset = this.updateSubset.bind(this);
+        this.applyCombineSettings = this.applyCombineSettings.bind(this);
+        this.updateCache = this.updateCache.bind(this);
+
         if (this.dataset.hasSetting("subset")) {
             /** @type ButtonGroup */
-            this.subsetSetting = this.dataset.subsetSetting(subset);
-            this.subsetSetting.observers.push(() => this.updateSubset());
+            this.settings.subset = this.dataset.subsetSetting(subsetKey);
+            this.settings.subset.observers.push(this.updateSubset, this.callObservers);
         }
 
         this.updateSubset();
-        this.applyCombineSettings = this.applyCombineSettings.bind(this);
+        this.updateCache();
+        this.observers.push(this.updateCache);
+    }
+
+    /**
+     * @param {string?} key
+     */
+    setupSubset(key) {
+        /** @type {DatasetSubset} */
+        this.subset = this.dataset.getSubset(key);
+        this.subsetCache = this.settingsCache[this.subset.key] ??= {};
     }
 
     updateSubset() {
-        const key = this.subsetSetting ? this.subsetSetting.value : null;
-        /** @type {DatasetSubset} */
-        this.subset = this.dataset.getSubset(key);
+        this.setupSubset(this.settings.subset?.value);
         this.setupSettings();
         this.setupSelector();
         this.setupObservers();
     }
-
-    setupSettings() {
-        const selectorSettings = this.subset.getSelectorSettings();
-        const gameSettings = this.dataset.getGameSettings(this.subset.key);
-
-        if (this.selectorSettings) this.selectorSettings.replaceWith(selectorSettings);
-        if (this.gameSettings) this.gameSettings.replaceWith(gameSettings);
-
-        this.selectorSettings = selectorSettings;
-        this.gameSettings = gameSettings;
-
-        this.setupCombineSettings();
+    
+    normalizeCache(cache) {
+        if (!cache) return {};
+        return ObjectUtils.map(cache, subCache => ObjectUtils.onlyKeys(subCache, ["selector", "game", "combine"]));
     }
 
-    currentForms() {
-        return this.selectorSettings.getDefault("forms", this.subset.defaultFormKey());
+    updateCacheToValues(cache, values, subsetKey) {
+        subsetKey ??= this.subset.key;
+        cache ??= {};
+        cache[subsetKey] ??= {};
+        const subCache = cache[subsetKey];
+
+        for (const [key, subKeys] of [["selector", ["forms", "variant", "checked"]], ["game", ["properties", "language"]]]) {
+            if (values[key]) {
+                subCache[key] ??= {};
+                Object.assign(subCache[key], ObjectUtils.onlyKeys(values[key], subKeys));
+            }
+        }
+
+        const subset = this.dataset.getSubset(subsetKey);
+        const form = subCache.selector?.forms;
+        if (values.combine && form && subset.hasCombine(form)) {
+            subCache.combine ??= {};
+            const combine = subCache.combine[form] ??= {};
+            combine.method = values.combine.method;
+            combine.keys ??= {};
+            combine.keys[values.combine.method] = values.combine.keys;
+        }
+
+        return cache;
+    }
+
+    updateCache() {
+        this.updateCacheToValues(this.settingsCache, this.getSettingsValues());
+    }
+
+    setupSettings() {
+        const selectorSettings = this.subset.getSelectorSettings(this.subsetCache.selector);
+        const gameSettings = this.dataset.getGameSettings(this.subset.key, this.subsetCache.game);
+
+        if (this.settings.selector) this.settings.selector.replaceWith(selectorSettings);
+        if (this.settings.game) this.settings.game.replaceWith(gameSettings);
+
+        this.settings.selector = selectorSettings;
+        this.settings.game = gameSettings;
     }
 
     removeCombineSettings() {
         this.removeCombineMethodSetting();
-        this.removeCombineLettersSetting();
+        this.removeCombineKeysSetting();
+        delete this.settings.combine;
     }
 
     removeCombineMethodSetting() {
-        if (this.combineMethodSetting) {
-            this.combineMethodSetting.remove();
-            this.combineMethodSetting.teardown();
-            this.combineMethodSetting = null;
+        if (this.settings.combine?.method) {
+            this.settings.combine.method.remove();
+            this.settings.combine.method.teardown();
+            this.settings.combine.method = null;
         }
     }
 
-    removeCombineLettersSetting() {
-        if (this.combineLettersSettings) {
-            this.combineLettersSettings.remove();
-            this.combineLettersSettings.teardown();
-            this.combineLettersSettings = null;
+    removeCombineKeysSetting() {
+        if (this.settings.combine?.keys) {
+            this.settings.combine.keys.remove();
+            this.settings.combine.keys.teardown();
+            this.settings.combine.keys = null;
         }
     }
 
@@ -74,56 +124,50 @@ export default class DatasetMediator extends Observable {
      * @return {boolean}
      */
     hasCombine() {
-        if (this.selectorSettings.has("forms") && !this.selectorSettings.get("forms").exclusive) return false;
-        const form = this.currentForms();
-        return !!this.subset.getFormConfig(form).combine;
+        return this.subset.hasCombine(this.currentForms());
     }
 
-    /**
-     * @param {string} method
-     * @param {number[]} keys
-     */
-    setupCombineSettings({method, keys} = {}) {
+    setupCombineSettings() {
         this.removeCombineSettings();
-
         if (!this.hasCombine()) return;
 
         const form = this.currentForms();
+        const method = this.subsetCache.combine?.[form]?.method;
+        this.settings.combine = {method: this.dataset.combineMethodSetting(this.subset.key, form, method)}
 
-        /** @type {ButtonGroup} */
-        this.combineMethodSetting = this.dataset.combineMethodSetting(this.subset.key, form, method);
-        this.combineMethodSetting.observers.push(value => DOMUtils.transition(
+        this.settings.combine.method.observers.push(() => DOMUtils.transition(
             () => {
-                this.setupCombineLetterSettings(value);
+                this.setupCombineKeysSettings();
                 this.callObservers();
             },
             ["selector-forms"]
         ));
-        this.selectorSettings.node.insertAdjacentElement("afterend", this.combineMethodSetting.node)
-        this.setupCombineLetterSettings(keys);
+        this.settings.selector.node.append(this.settings.combine.method.node);
+        this.setupCombineKeysSettings();
     }
 
-    /**
-     * @param {number[]} [selected]
-     */
-    setupCombineLetterSettings(selected) {
-        this.removeCombineLettersSetting();
+    setupCombineKeysSettings() {
+        this.removeCombineKeysSetting();
 
-        const method = this.combineMethodSetting.value;
+        const method = this.settings.combine.method.value;
         /** @type SettingCollection */
-        this.combineLettersSettings = this.dataset.combineLettersSettings(method, this.subset.key, selected);
-        this.combineLettersSettings.observers.push(this.applyCombineSettings, this.callObservers);
-        this.combineMethodSetting.node.insertAdjacentElement("afterend", this.combineLettersSettings.node);
+        this.settings.combine.keys = this.dataset.combineLettersSettings(method, this.subset.key, this.subsetCache.combine?.[this.currentForms()]?.keys?.[method]);
+        this.settings.combine.keys.observers.push(this.applyCombineSettings, this.callObservers);
+        this.settings.combine.method.node.insertAdjacentElement("afterend", this.settings.combine.keys.node);
         this.applyCombineSettings();
     }
-    
-    getCombineSettingsValues() {
-        return {
-            method: this.combineMethodSetting.value,
-            keys: Object.values(this.combineLettersSettings.getValues())
-        };
-    }
 
+    applyCombineSettings() {
+        const form = this.currentForms();
+        const combineConfig = this.getCombineConfig();
+
+        if (this.selector) this.selector.updateButtonContents((content, item) => {
+            this.findFormElement(content, form).replaceChildren(
+                item.getForm(form).getNode({combine: combineConfig})
+            );
+        });
+    }
+    
     getCombineConfig() {
         const {method, keys} = this.getCombineSettingsValues();
         /** @type StringCombiner */
@@ -134,14 +178,67 @@ export default class DatasetMediator extends Observable {
         return {combiner, values, index};
     }
 
-    applyCombineSettings() {
-        const form = this.currentForms();
-        const combineConfig = this.getCombineConfig();
+    getCombineSettingsValues() {
+        return {
+            method: this.settings.combine.method.value,
+            keys: Object.values(this.settings.combine.keys.getValues()).map(i => parseInt(i))
+        };
+    }
 
-        this.selector.updateButtonContents((content, item) => {
-            this.findFormElement(content, form).replaceChildren(
-                item.getForm(form).getNode({combine: combineConfig})
-            );
+    setupSelector() {
+        const oldSelector = this.selector;
+        /** @type {Selector} */
+        this.selector = this.subset.createSelector();
+        this.setupSelectorButtons();
+        this.selector.finishSetup();
+
+        this.applySelectorStyles();
+        this.readSelectorSettings();
+
+        if (this.subsetCache.selector?.checked) this.selector.setChecked((_, i) => this.subsetCache.selector.checked[i]);
+
+        if (oldSelector) oldSelector.replaceWith(this.selector);
+    }
+
+    setupSelectorButtons() {
+        const forms = Object.keys(this.subset.forms.data);
+        this.selector.setupButtonContents(item => item.combineForms(forms).getNode());
+
+        if (this.subset.selectorData.label) {
+            this.selector.labelButtons((item, index) => this.subset.getSelectorItemLabel(index));
+        }
+    }
+
+    setupObservers() {
+        this.settings.selector.observers.push(({forms, variant}, changed) => DOMUtils.transition(
+            () => {
+                this.applySelectorSettings(forms, variant, changed);
+                this.callObservers();
+            },
+            ["selector-forms"]
+        ));
+
+        this.selector.observers.push(this.callObservers);
+        this.settings.game.observers.push(this.callObservers);
+    }
+
+    observerArgs() {
+        return [this.getSettingsValues()];
+    }
+
+    updateSelectorFont(variant) {
+        const font = this.dataset.getSelectorDisplayFont(this.subset.key, variant);
+        this.selector.updateButtonContents(content => {
+            font.applyTo(content);
+        });
+    }
+
+    applySelectorStyles() {
+        this.selector.node.dir = this.dataset.getDir();
+
+        const blockStyles = this.subset.getSelectorBlockStyles();
+        this.selector.blocks.forEach((block, index) => {
+            block.applyStyle(blockStyles[index]);
         });
     }
 
@@ -157,84 +254,16 @@ export default class DatasetMediator extends Observable {
         throw new Error("Form element not found.");
     }
 
-    setupSelector() {
-        const oldSelector = this.selector;
-        this.selector = this.subset.createSelector();
-        this.setupSelectorButtons();
-        this.selector.finishSetup();
-
-        this.applySelectorStyles();
-        const {forms, variant} = this.selectorSettings.getValues();
-        this.applySelectorSettings(forms, variant);
-
-        if (oldSelector) oldSelector.replaceWith(this.selector);
-    }
-
-    setupSelectorButtons() {
-        const forms = Object.keys(this.subset.forms.data);
-        this.selector.setupButtonContents(item => item.combineForms(forms).getNode());
-
-        if (this.subset.selectorData.label) {
-            this.selector.labelButtons((item, index) => this.subset.getSelectorItemLabel(index));
-        }
-    }
-
-    setupObservers() {
-        this.selectorSettings.observers.push(({forms, variant}, changed) => DOMUtils.transition(
-            () => {
-                this.applySelectorSettings(forms, variant, changed);
-                this.callObservers();
-            },
-            ["selector-forms"]
-        ));
-
-        this.selector.observers.push(this.callObservers);
-        this.gameSettings.observers.push(this.callObservers);
-    }
-
-    /**
-     * @returns {{checked: boolean[], form?: string, variant?: string, properties?: string[], language?: string}}
-     */
-    getSettingsValues() {
-        const {method, keys} = this.hasCombine() ? this.getCombineSettingsValues() : {};
-        return Object.assign(
-            {checked: this.selector.getChecked({includeDisabled: true})},
-            this.selectorSettings.getValues(),
-            this.gameSettings.getValues(),
-            this.hasCombine() ? {combineMethod: method, combineKeys: keys} : null
-        );
-    }
-
-    observerArgs() {
-        return [this.getSettingsValues()];
-    }
-
-    updateSelectorFont(variant) {
-        const font = this.dataset.getSelectorDisplayFont(variant);
-        this.selector.updateButtonContents(content => {
-            font.applyTo(content);
-        });
-    }
-
-    applySelectorStyles() {
-        this.selector.node.dir = this.dataset.getDir();
-
-        const blockStyles = this.subset.getSelectorBlockStyles();
-        this.selector.blocks.forEach((block, index) => {
-            block.applyStyle(blockStyles[index]);
-        });
-    }
-
     getCheckedItems() {
         return this.selector.getCheckedItems();
     }
 
     getVariant() {
-        return this.selectorSettings.getDefault("variant", null);
+        return this.settings.selector.getDefault("variant", null);
     }
 
     getLanguage() {
-        return this.gameSettings.getDefault("language", null)
+        return this.settings.game.getDefault("language", null)
     }
 
     /**
@@ -245,30 +274,43 @@ export default class DatasetMediator extends Observable {
         return this.selector.checkedCount(includeDisabled);
     }
 
-    setSettings(values) {
-        if (values.checked) {
-            tryMessage(
-                () => this.selector.setChecked((_, index) => values.checked[index]),
-                "Error setting selected selector items:"
-            );
-        }
+    /**
+     * @returns {{
+     *  subset?: string,
+     *  selector: {checked: boolean[], forms?: string, variant?: string},
+     *  game: {properties?: string[], language?: string},
+     *  combine?: {method: string, keys: number[]}
+     * }}
+     */
+    getSettingsValues() {
+        const values = {};
 
-        try {
-            this.selectorSettings.setValues(values);
-            const {forms, variant} = this.selectorSettings.getValues();
-            this.applySelectorSettings(forms, variant);
-            this.setupCombineSettings({method: values.combineMethod, keys: values.combineKeys});
-        } catch (error) {
-            console.error("Error setting selector settings values:", error);
-        }
+        if (this.subset) values.subset = this.subset.key;
+        values.selector = this.settings.selector.getValues();
+        values.selector.checked = this.selector.getChecked({includeDisabled: true});
+        if (this.settings.game.size > 0) values.game = this.settings.game.getValues();
+        if (this.hasCombine()) values.combine = this.getCombineSettingsValues();
 
-        tryMessage(() => this.gameSettings.setValues(values), "Error setting game setting values:");
+        return values;
+    }
+
+    /**
+     * @returns {string | string[]}
+     */
+    currentForms() {
+        const defaultKey = this.subset.defaultFormKey();
+        return this.settings.selector.getDefault("forms", this.subset.forms.exclusive ? defaultKey : [defaultKey]);
+    }
+
+    readSelectorSettings() {
+        const {forms, variant} = this.settings.selector.getValues();
+        this.applySelectorSettings(forms, variant);
     }
 
     /**
      * @param {string[]} [forms]
      * @param {string} [variant]
-     * @param {"forms" | "variant"} [changed]
+     * @param {"forms" | "variant" | null} [changed]
      */
     applySelectorSettings(forms, variant, changed) {
         const formKeys = this.subset.getFormKeysFromGrouped(forms);
@@ -305,11 +347,11 @@ export default class DatasetMediator extends Observable {
     getActiveForms() {
         if (!this.subset.hasSetting("forms")) return Object.keys(this.subset.forms.data);
 
-        return this.subset.getFormKeysFromGrouped(this.selectorSettings.getValue("forms"));
+        return this.subset.getFormKeysFromGrouped(this.settings.selector.getValue("forms"));
     }
 
     getActiveProperties() {
-        return this.gameSettings.getDefault("properties", Object.keys(this.subset.properties));
+        return this.settings.game.getDefault("properties", Object.keys(this.subset.properties));
     }
 
     /**
@@ -375,8 +417,10 @@ export default class DatasetMediator extends Observable {
                 break;
         }
 
-        game.setCardDisplayMeta({dir: this.dataset.getDir(), lang: this.dataset.getLang(this.subset.key, params.variant)});
-
+        game.setCardDisplayMeta({
+            dir: this.dataset.getDir(),
+            lang: this.dataset.getLang(this.subset.key, params.variant)
+        });
         game.setupAnswerInputs(
             properties.map(key => {return {key: key, label: this.subset.properties[key].label}}),
             {lang: params.language}
@@ -454,19 +498,7 @@ export default class DatasetMediator extends Observable {
 
     teardown() {
         this.selector.teardown();
-        this.selectorSettings.teardown();
-        this.gameSettings.teardown();
-    }
-}
-
-/**
- * @param {function} callback
- * @param {string} message
- */
-function tryMessage(callback, message) {
-    try {
-        callback();
-    } catch (e) {
-        console.error(message, e);
+        this.settings.selector.teardown();
+        this.settings.game.teardown();
     }
 }

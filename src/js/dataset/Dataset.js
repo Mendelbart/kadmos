@@ -10,6 +10,7 @@ DOMUtils.registerTemplate(
     `<div class="heading-element"><span class="heading-element-number"></span><span class="heading-element-symbol"></span></div>`
 );
 
+export const DEFAULT_SUBSET_KEY = "0";
 const DATASETS_ROOT = "./json/datasets/";
 export const DEFAULT_DATASET = "greek";
 
@@ -143,7 +144,7 @@ export class Dataset {
      * @returns {Record<string,DatasetSubset>}
      */
     processSubsets(data) {
-        if (!data.subsets) return {"default": new DatasetSubset("default", data)};
+        if (!data.subsets) return Object.fromEntries([[DEFAULT_SUBSET_KEY, new DatasetSubset(DEFAULT_SUBSET_KEY, data)]]);
 
         const subsets = {};
         for (const [key, subset] of Object.entries(data.subsets)) {
@@ -334,7 +335,7 @@ export class Dataset {
 
     /**
      * @param {string} method
-     * @param {string[]} combineKeys
+     * @param {number[]} combineKeys
      * @returns {(string | null)[]}
      */
     getCombineLetters(method, combineKeys) {
@@ -343,7 +344,7 @@ export class Dataset {
             const key = combineKeys[index];
             if (key == null) return null;
             const form = config.letterConfig ? config.letterConfig[index] : null;
-            return this.subsets[ss].getLetterForm(parseInt(key), form).nodeable.string;
+            return this.subsets[ss].getLetterForm(key, form).nodeable.string;
         });
     }
 

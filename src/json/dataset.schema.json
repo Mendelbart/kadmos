@@ -222,7 +222,8 @@
               },
               "additionalProperties": false
             }
-          }
+          },
+          "required": ["items"]
         },
         {
           "properties": {
@@ -347,6 +348,11 @@
                 "property": {
                   "type": "string",
                   "description": "Which property to label the items with."
+                },
+                "splitFirst": {
+                  "type": "boolean",
+                  "description": "If true, only shows the first value of a list property.",
+                  "default": true
                 }
               },
               "required": ["property"]

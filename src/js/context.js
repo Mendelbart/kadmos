@@ -36,6 +36,22 @@ export function setup() {
         setupDatasetSelect();
         readFromSearchParams(false);
     });
+
+    showHeading(window.localStorage.getItem("show_dataset_heading") === "true");
+    document.getElementById("game-heading-dataset").addEventListener("click", toggleHeadingShown);
+    document.getElementById("game-heading-default").addEventListener("click", toggleHeadingShown);
+}
+
+/**
+ * @param {boolean} showDatasetHeading
+ */
+function showHeading(showDatasetHeading) {
+    DOMUtils.toggleShown(showDatasetHeading, document.getElementById("game-heading-dataset"), document.getElementById("game-heading-default"));
+    window.localStorage.setItem("show_dataset_heading", showDatasetHeading.toString());
+}
+
+function toggleHeadingShown() {
+    showHeading(window.localStorage.getItem("show_dataset_heading") !== "true");
 }
 
 function setupButtonListeners() {
@@ -238,9 +254,8 @@ function selectDataset(dataset) {
         DOMUtils.showPage(document.getElementById('game-filters'));
 
         setupDSM();
-        DSM.setSettings(getCachedSettings());
         checkPagesNextButton();
-        setupGameHeading(DSM.selectorSettings.getDefault("variant"));
+        setupGameHeading(DSM.settings.selector.getDefault("variant"));
     }).catch(err => console.error(err));
 }
 
@@ -260,24 +275,19 @@ function setupTerms() {
 function setupDSM() {
     DSM?.teardown();
 
-    DSM = new DatasetMediator(DATASET, {subset: DOMUtils.getSearchParam("subset")});
-    if (DATASET.hasSetting("subset")) {
-        DOMUtils.setSearchParams({subset: DSM.subsetSetting.value});
-        DSM.subsetSetting.observers.push(value => DOMUtils.setSearchParams({subset: value}));
+    const [subset, cache] = getStoredSettings();
+    DSM = new DatasetMediator(DATASET, cache, {subset: DOMUtils.getSearchParam("subset") ?? subset});
+    DSM.observers.push(checkPagesNextButton, storeSettings);
+
+    document.getElementById('dataset-filter-settings').replaceChildren(DSM.settings.selector.node, DSM.selector.node);
+    document.getElementById("dataset-game-settings").replaceChildren(DSM.settings.game.node);
+
+    if (DSM.settings.subset) {
+        document.getElementById('dataset-filter-settings').prepend(DSM.settings.subset.node);
     }
 
-    DSM.selector.observers.push(checkPagesNextButton);
-    DSM.observers.push(saveSettings);
-    if (DSM.subsetSetting) DSM.subsetSetting.observers.push(() => {
-        DSM.setSettings(getCachedSettings());
-    });
-
-    document.getElementById('dataset-filter-settings').replaceChildren(DSM.selectorSettings.node, DSM.selector.node);
-    if (DSM.subsetSetting) document.getElementById('dataset-filter-settings').prepend(DSM.subsetSetting.node);
-    document.getElementById("dataset-game-settings").replaceChildren(DSM.gameSettings.node);
-
-    if (DSM.selectorSettings.has("variant")) {
-        DSM.selectorSettings.addObserverTo("variant", variant => {
+    if (DSM.settings.selector.has("variant")) {
+        DSM.settings.selector.addObserverTo("variant", variant => {
             setupGameHeading(variant);
         });
     }
@@ -285,8 +295,8 @@ function setupDSM() {
 
 function setupGameHeading(variant) {
     const heading = document.getElementById('game-heading');
-    heading.querySelector("h1").replaceChildren(DATASET.getGameHeading(variant));
-    heading.dir = DATASET.getDir();
+    heading.querySelector("#game-heading-dataset").replaceChildren(DATASET.getGameHeading(variant));
+    // heading.dir = DATASET.getDir();
 }
 
 function checkPagesNextButton() {
@@ -297,16 +307,12 @@ function checkPagesNextButton() {
 /***************************************** GAME *******************************/
 function startGame() {
     GAME?.cleanup();
-
-    saveSettings(DSM.getSettingsValues());
-
     GAME = DSM.getGame();
 
     const seed = GENERIC_GAME_SETTINGS.getValue("seed");
     if (seed) GAME.seed(seed);
 
     GAME.keepKeyboardOpen = PAGE_SETTINGS.getValue("keepKeyboardOpen") === SwitchTrueValue;
-
     GAME.onFinish.push(() => setPlaying(false));
 
     setPlaying(true);
@@ -338,49 +344,39 @@ function readFromSearchParams() {
  * @returns {string}
  */
 function localStorageSettingsKey() {
-    if (DATASET.hasSetting("subset")) {
-        return "script_" + DATASET.key + "_" + DSM.subset.key;
-    }
-
     return "script_" + DATASET.key;
 }
 
-function saveSettings(values) {
-    DOMUtils.setSearchParams({dataset: DATASET.key});
-    if (DATASET.hasSetting("subset")) {
-        DOMUtils.setSearchParams({subset: DSM.subset.key});
-    } else {
-        DOMUtils.unsetSearchParam("subset");
+function storeSettings() {
+    const cache = {};
+    for (const [key, subCache] of Object.entries(DSM.settingsCache)) {
+        cache[key] = Object.assign({}, subCache);
+        cache[key].selector = Object.assign({}, subCache.selector);
+        cache[key].selector.checked = encodeBase64BoolArray(cache[key].selector.checked);
     }
-
-    if (values.checked) {
-        values.checked = encodeBase64BoolArray(values.checked);
-    }
-    if (values.combineKeys) {
-        values.combineKeys = values.combineKeys.join(",");
-    }
-
-    window.localStorage.setItem(localStorageSettingsKey(), JSON.stringify(values));
+    const storage = DSM.subset.key + ";" + JSON.stringify(cache);
+    window.localStorage.setItem(localStorageSettingsKey(), storage);
 }
 
 /**
- * @returns {Record<string,any>}
+ * @returns {[string, Record<string,any>]}
  */
-function getCachedSettings() {
-    const settingsJSON = window.localStorage.getItem(localStorageSettingsKey());
-    if (!settingsJSON) return {};
+function getStoredSettings() {
+    const storage = window.localStorage.getItem(localStorageSettingsKey());
+    if (!storage) return [null, null];
+
+    const [subsetKey, settingsJSON] = storage.split(";", 2);
 
     try {
         const values = JSON.parse(settingsJSON);
-        if (typeof values.checked === "string") {
-            values.checked = decodeBase64BoolArray(values.checked);
+        for (const subCache of Object.values(values)) {
+            if (subCache.selector?.checked) subCache.selector.checked = decodeBase64BoolArray(subCache.selector.checked);
         }
-        if (values.combineKeys) {
-            values.combineKeys = values.combineKeys.split(",");
-        }
-        return values;
+
+        return [subsetKey, values];
     } catch (e) {
+        console.warn("Error occured during local storage retrieval.");
         console.error(e);
-        return {};
+        return [null, null];
     }
 }
