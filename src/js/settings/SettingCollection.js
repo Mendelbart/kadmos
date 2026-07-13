@@ -5,9 +5,7 @@ import {createElement} from "../utils/dom";
 export default class SettingCollection extends Observable {
     constructor() {
         super();
-        /**
-         * @type {Map<*, Setting>}
-         */
+        /** @type {Map<*, Setting>} */
         this.map = new Map();
         this.node = createElement("div.settings");
         this.node.role = "group";
@@ -21,6 +19,10 @@ export default class SettingCollection extends Observable {
         const collection = new this();
         collection.put(settings);
         return collection;
+    }
+
+    get size() {
+        return this.map.size;
     }
 
     /**

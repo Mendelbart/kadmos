@@ -184,6 +184,15 @@ export default class DatasetSubset {
     }
 
     /**
+     * @param {string} form
+     * @returns {boolean}
+     */
+    hasCombine(form) {
+        if (!this.forms.exclusive) return false;
+        return !!this.forms.data[form].combine;
+    }
+
+    /**
      * @param variant
      * @returns {string | null}
      */
@@ -466,9 +475,10 @@ export default class DatasetSubset {
 
     getSelectorItemLabel(index) {
         const property = this.selectorData.label.property;
+        const splitFirst = this.selectorData.label.splitFirst ?? true;
         return this.items[index].getProperty({
             property,
-            splitter: this.getPropertySplitter(property)
+            splitter: splitFirst ? this.getPropertySplitter(property) : null
         })
     }
 
@@ -551,7 +561,7 @@ export default class DatasetSubset {
                         item.getForm(form).stringValue() + " – " + this.getSelectorItemLabel(index)
                     ])
             ),
-            {selected}
+            {selected: typeof selected === "number" ? selected.toString() : selected}
         );
     }
 

@@ -35,7 +35,7 @@
         }
       },
       "single-dia": {
-        "label": "Diacritic Template",
+        "label": "Template",
         "subsets": ["vowels"],
         "letterConfig": [{"form": "dia"}],
         "templates": [
