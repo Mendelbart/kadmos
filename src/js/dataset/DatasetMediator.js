@@ -91,6 +91,8 @@ export default class DatasetMediator extends Observable {
         const selectorSettings = this.subset.getSelectorSettings(this.subsetCache.selector);
         const gameSettings = this.dataset.getGameSettings(this.subset.key, this.subsetCache.game);
 
+        selectorSettings.node.classList.add("inline");
+
         if (this.settings.selector) this.settings.selector.replaceWith(selectorSettings);
         if (this.settings.game) this.settings.game.replaceWith(gameSettings);
 
@@ -154,6 +156,7 @@ export default class DatasetMediator extends Observable {
         this.settings.combine.keys = this.dataset.combineLettersSettings(method, this.subset.key, this.subsetCache.combine?.[this.currentForms()]?.keys?.[method]);
         this.settings.combine.keys.observers.push(this.applyCombineSettings, this.callObservers);
         this.settings.combine.method.node.insertAdjacentElement("afterend", this.settings.combine.keys.node);
+        this.settings.combine.keys.node.classList.add("inline");
         this.applyCombineSettings();
     }
 

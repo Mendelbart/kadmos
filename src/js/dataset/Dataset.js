@@ -343,7 +343,7 @@ export class Dataset {
         return config.subsets.map((ss, index) => {
             const key = combineKeys[index];
             if (key == null) return null;
-            const form = config.letterConfig ? config.letterConfig[index] : null;
+            const form = config.letterConfig?.[index] ? config.letterConfig[index].form : null;
             return this.subsets[ss].getLetterForm(key, form).nodeable.string;
         });
     }

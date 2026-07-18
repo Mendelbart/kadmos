@@ -6,6 +6,7 @@
   "devanagari": {"name": "Devanagari", "file": "devanagari.json"},
   "elder_futhark": {"name": "Elder Futhark", "file": "elder_futhark.json"},
   "greek": {"name": "Greek", "file": "greek.json"},
+  "hangul": {"name": "Hangul (Korean)", "file": "hangul.json"},
   "hebrew": {"name": "Hebrew", "file": "hebrew.json"},
   "japanese": {"name": "Japanese Kana", "file": "japanese.json"},
   "phoenician": {"name": "Phoenician", "file": "phoenician.json"},

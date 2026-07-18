@@ -14,61 +14,142 @@
     },
     "params": {"lineHeight": 1.25}
   },
-  "properties": {
-    "name": {
-      "label": "Name",
-      "config": {
-        "type": "string",
+  "combine": {
+    "methods": {
+      "syllable": {
+        "label": "Syllable",
+        "subsets": ["letters", "vowels"],
+        "letterConfig": [
+          {"form": "normal"},
+          {"form": "default"}
+        ],
         "properties": {
-          "maxDist": 1
+          "name": {
+            "sources": ["name", "name"]
+          }
         }
-      },
-      "active": true
-    },
-    "num": {
-      "label": "Numeric Value",
-      "config": {
-        "type": "integer"
       }
     }
   },
-  "forms": {
-    "data": {
-      "normal": "Normal",
-      "sofit": "Sofit"
+  "subsets": {
+    "letters": {
+      "label": "Letters",
+      "properties": {
+        "name": {
+          "label": "Name",
+          "config": {
+            "type": "string",
+            "properties": {
+              "maxDist": 1
+            }
+          },
+          "active": true
+        },
+        "num": {
+          "label": "Numeric Value",
+          "config": {
+            "type": "integer"
+          }
+        }
+      },
+      "forms": {
+        "data": {
+          "normal": "Normal",
+          "sofit": "Sofit"
+        }
+      },
+      "selector": {
+        "font": {"key": "serif", "lineHeight": 1.35, "scale": 1.1},
+        "label": {"property": "name", "splitFirst": true},
+        "style": {"buttonWidth": "5ch"}
+      },
+      "items": {
+        "properties": ["name", "num"],
+        "data": [
+          ["א", ["aleph", 1]],
+          ["ב", ["bet", 2]],
+          ["ג", ["gimel", 3]],
+          ["ד", ["dalet", 4]],
+          ["ה", ["he", 5]],
+          ["ו", ["vav", 6]],
+          ["ז", ["zayin", 7]],
+          ["ח", ["chet", 8]],
+          ["ט", ["tet", 9]],
+          ["י", ["yod", 10]],
+          ["כך", ["kaf", 20]],
+          ["ל", ["lamed", 30]],
+          ["מם", ["mem", 40]],
+          ["נן", ["nun", 50]],
+          ["ס", ["samekh", 60]],
+          ["ע", ["ayin", 70]],
+          ["פף", ["pe", 80]],
+          ["צץ", ["tsadi", 90]],
+          ["ק", ["qof", 100]],
+          ["ר", ["resh", 200]],
+          ["ש", ["shin", 300]],
+          ["ת", ["tav", 400]]
+        ]
+      }
+    },
+    "vowels": {
+      "label": "Vowels",
+      "properties": {
+        "name": {
+          "label": "Name",
+          "config": {
+            "type": "string"
+          }
+        }
+      },
+      "forms": {
+        "data": {
+          "default": {
+            "label": "Default",
+            "combine": ["syllable"]
+          }
+        },
+        "exclusive": true
+      },
+      "selector": {
+        "block": {
+          "grid": true,
+          "dimensions": [6, 4],
+          "gaps": "(3,5|1,4);(6|1:3)",
+          "rowLabels": ["A", "E", "I", "O", "U", null],
+          "columnLabels": ["long", "short", "reduced"],
+          "columnLabelSpans": [2, 1, 1]
+        },
+        "label": {
+          "property": "name"
+        },
+        "style": {
+          "buttonMaxWidth": "7ch",
+          "buttonMinWidth": "4.5ch",
+          "labelGap": ".25rem"
+        }
+      },
+      "items": {
+        "properties": ["name"],
+        "data": [
+          ["ָ", "kamatz"],
+          ["ָה", "kamatz he"],
+          ["ַ", "patach"],
+          ["ֲ", "hataf patach"],
+          ["ֶ", "segol"],
+          ["ֵי", "sere yod"],
+          ["ֵ", "sere"],
+          ["ֱ", "hataf segol"],
+          ["ִי", "hiriq yod"],
+          ["ִ", "hiriq"],
+          ["ֹ", "holam"],
+          ["וֹ", "holam vav"],
+          ["ָ", "kamatz hatuf"],
+          ["ֳ", "hataf kamatz"],
+          ["וּ", "shuruk"],
+          ["ֻ", "kubutz"],
+          ["ְ", "shva"]
+        ]
+      }
     }
-  },
-  "selector": {
-    "font": {"key": "serif", "lineHeight": 1.35, "scale": 1.1},
-    "block": {"mode": "flex"},
-    "label": {"property": "name", "splitFirst": true},
-    "style": {"buttonWidth": "5ch"}
-  },
-  "items": {
-    "properties": ["name", "num"],
-    "data": [
-      ["א", ["Aleph", 1]],
-      ["ב", ["Bet", 2]],
-      ["ג", ["Gimel", 3]],
-      ["ד", ["Dalet", 4]],
-      ["ה", ["He", 5]],
-      ["ו", ["Vav", 6]],
-      ["ז", ["Zayin", 7]],
-      ["ח", ["Chet", 8]],
-      ["ט", ["Tet", 9]],
-      ["י", ["Yod", 10]],
-      ["כך", ["Kaf", 20]],
-      ["ל", ["Lamed", 30]],
-      ["מם", ["Mem", 40]],
-      ["נן", ["Nun", 50]],
-      ["ס", ["Samekh", 60]],
-      ["ע", ["Ayin", 70]],
-      ["פף", ["Pe", 80]],
-      ["צץ", ["Tsadi", 90]],
-      ["ק", ["Qof", 100]],
-      ["ר", ["Resh", 200]],
-      ["ש", ["Shin", 300]],
-      ["ת", ["Tav", 400]]
-    ]
   }
 }

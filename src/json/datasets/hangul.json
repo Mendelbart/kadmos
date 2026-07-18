@@ -1,0 +1,189 @@
+{
+  "key": "hangul",
+  "name": "Hangul (Korean)",
+  "metadata": {
+    "gameHeading": {"string": "카드모스", "font": {"key": "sans"}}
+  },
+  "fonts": {
+    "data": {
+      "serif": {"family": "Noto Serif Korean", "label": "Serif"},
+      "sans": {"family": "Noto Sans Korean", "label": "Sans", "default": true}
+    }
+  },
+  "subsets": {
+    "basic": {
+      "label": "Basic letters",
+      "properties": {
+        "name": {
+          "label": "Name",
+          "config": {"type": "string"},
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["name"],
+        "data": [
+          ["ㅏ", "a"],
+          ["ㅑ", "ya"],
+          ["ㅓ", "eo"],
+          ["ㅕ", "yeo"],
+          ["ㅗ", "o"],
+          ["ㅛ", "yo"],
+          ["ㅜ", "u"],
+          ["ㅠ", "yu"],
+          ["ㅡ", "eu"],
+          ["ㅣ", "i"],
+          ["ㄱ", "giyeok"],
+          ["ㄴ", "nieun"],
+          ["ㄷ", "digeut"],
+          ["ㄹ", "rieul"],
+          ["ㅁ", "mieum"],
+          ["ㅂ", "bieup"],
+          ["ㅅ", "siot"],
+          ["ㅇ", "ieung"],
+          ["ㅈ", "jieut"],
+          ["ㅊ", "chieut"],
+          ["ㅋ", "kieuk"],
+          ["ㅌ", "tieut"],
+          ["ㅍ", "pieup"],
+          ["ㅎ", "hieut"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "name"
+        },
+        "style": {
+          "buttonWidth": "3rem"
+        },
+        "blocks": [
+          {"letters": {"i1": "1:10"}},
+          {"letters": {"i1": "11:24"}}
+        ]
+      }
+    },
+    "initial": {
+      "label": "Initial",
+      "properties": {
+        "transl": {
+          "label": "Transliteration",
+          "config": {"type": "string"}
+        }
+      },
+      "items": {
+        "properties": ["transl"],
+        "data": [
+          ["ㄱ", "g"],
+          ["ㄲ", "kk"],
+          ["ㄴ", "n"],
+          ["ㄷ", "d"],
+          ["ㄸ", "tt"],
+          ["ㄹ", "r"],
+          ["ㅁ", "m"],
+          ["ㅂ", "b"],
+          ["ㅃ", "pp"],
+          ["ㅅ", "s"],
+          ["ㅆ", "ss"],
+          ["ㅇ", "-"],
+          ["ㅈ", "j"],
+          ["ㅉ", "jj"],
+          ["ㅊ", "ch"],
+          ["ㅋ", "k"],
+          ["ㅌ", "t"],
+          ["ㅍ", "p"],
+          ["ㅎ", "h"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "transl"
+        },
+        "style": {
+          "buttonWidth": "2.5rem"
+        }
+      }
+    },
+    "vowels": {
+      "label": "Vowels",
+      "properties": {
+        "transl": {
+          "label": "Transliteration",
+          "config": {"type": "string"},
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["transl"],
+        "data": [
+          ["ㅏ", "a"],
+          ["ㅐ", "ae"],
+          ["ㅑ", "ya"],
+          ["ㅒ", "yae"],
+          ["ㅓ", "eo"],
+          ["ㅔ", "e"],
+          ["ㅕ", "yeo"],
+          ["ㅖ", "ye"],
+          ["ㅗ", "o"],
+          ["ㅘ", "wa"],
+          ["ㅙ", "wae"],
+          ["ㅚ", "oe"],
+          ["ㅛ", "yo"],
+          ["ㅜ", "u"],
+          ["ㅝ", "wo"],
+          ["ㅞ", "we"],
+          ["ㅟ", "wi"],
+          ["ㅠ", "yu"],
+          ["ㅡ", "eu"],
+          ["ㅢ", "ui"],
+          ["ㅣ", "i"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "transl"
+        },
+        "style": {
+          "buttonWidth": "2.5rem"
+        }
+      }
+    },
+    "final": {
+      "label": "Final",
+      "properties": {
+        "transl": {
+          "label": "Transliteration",
+          "config": {"type": "string"}
+        }
+      },
+      "items": {
+        "properties": ["transl"],
+        "data": [
+          ["ㄱ", "k"],
+          ["ㄲ", "k"],
+          ["ㄴ", "n"],
+          ["ㄷ", "t"],
+          ["ㄹ", "l"],
+          ["ㅁ", "m"],
+          ["ㅂ", "p"],
+          ["ㅅ", "t"],
+          ["ㅆ", "t"],
+          ["ㅇ", "ng"],
+          ["ㅈ", "t"],
+          ["ㅊ", "t"],
+          ["ㅋ", "k"],
+          ["ㅌ", "t"],
+          ["ㅍ", "p"],
+          ["ㅎ", "t"]
+        ]
+      },
+      "selector": {
+        "label": {
+          "property": "transl"
+        },
+        "style": {
+          "buttonWidth": "2.5rem"
+        }
+      }
+    }
+  }
+}

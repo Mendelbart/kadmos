@@ -162,6 +162,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .button-group {
   display: flex;
+  align-items: start;
   gap: .25rem;
   overflow-x: auto;
   border: none;
