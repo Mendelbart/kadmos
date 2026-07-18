@@ -116,5 +116,21 @@
       "wght": "100 900",
       "wdth": "100"
     }
+  },
+  {
+    "family": "Noto Serif Korean",
+    "fallback": "serif",
+    "lineHeight": 1,
+    "variationSettings": {
+      "wght": "100 900"
+    }
+  },
+  {
+  "family": "Noto Sans Korean",
+  "fallback": "system-ui, sans-serif",
+  "lineHeight": 1,
+  "variationSettings": {
+    "wght": "100 900"
   }
+}
 ]
