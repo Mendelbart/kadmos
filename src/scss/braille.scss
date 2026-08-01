@@ -26,6 +26,6 @@
 
   &.unfilled {
     width: var(--small-dot-size);
-    opacity: calc(30% - var(--braille-small-dot-size) * 15%);
+    opacity: calc(40% - var(--braille-small-dot-size) * 25%);
   }
 }

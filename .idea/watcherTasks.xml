@@ -41,7 +41,7 @@
       <option name="workingDir" value="$PROJECT_DIR$" />
       <envs />
     </TaskOptions>
-    <TaskOptions isEnabled="true">
+    <TaskOptions isEnabled="false">
       <option name="arguments" value="-u -i src/json/datasets/$FileName$ -o dist/json/datasets/$FileName$" />
       <option name="checkSyntaxErrors" value="false" />
       <option name="description" />
@@ -62,19 +62,19 @@
       <envs />
     </TaskOptions>
     <TaskOptions isEnabled="true">
-      <option name="arguments" value="" />
+      <option name="arguments" value="$FilePath$" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ERROR" />
       <option name="fileExtension" value="json" />
       <option name="immediateSync" value="true" />
-      <option name="name" value="Font Subsetting" />
+      <option name="name" value="Process Dataset" />
       <option name="output" value="" />
       <option name="outputFilters">
         <array />
       </option>
       <option name="outputFromStdout" value="false" />
-      <option name="program" value="$PROJECT_DIR$/scripts/subset-fonts.py" />
+      <option name="program" value="$PROJECT_DIR$/scripts/process_dataset.py" />
       <option name="runOnExternalChanges" value="true" />
       <option name="scopeName" value="datasets" />
       <option name="trackOnlyRoot" value="false" />
@@ -117,6 +117,26 @@
       <option name="program" value="$PROJECT_DIR$/scripts/subset-fontawesome.py" />
       <option name="runOnExternalChanges" value="true" />
       <option name="scopeName" value="Font Awesome" />
+      <option name="trackOnlyRoot" value="false" />
+      <option name="workingDir" value="$PROJECT_DIR$" />
+      <envs />
+    </TaskOptions>
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="" />
+      <option name="checkSyntaxErrors" value="true" />
+      <option name="description" />
+      <option name="exitCodeBehavior" value="ERROR" />
+      <option name="fileExtension" value="json" />
+      <option name="immediateSync" value="true" />
+      <option name="name" value="Font Subsetting" />
+      <option name="output" value="" />
+      <option name="outputFilters">
+        <array />
+      </option>
+      <option name="outputFromStdout" value="false" />
+      <option name="program" value="$PROJECT_DIR$/scripts/subset-fonts.py" />
+      <option name="runOnExternalChanges" value="true" />
+      <option name="scopeName" value="datasets" />
       <option name="trackOnlyRoot" value="false" />
       <option name="workingDir" value="$PROJECT_DIR$" />
       <envs />

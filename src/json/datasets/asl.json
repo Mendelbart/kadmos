@@ -1,0 +1,69 @@
+{
+  "key": "asl",
+  "name": "ASL Fingerspelling",
+  "letterConfig": {
+    "type": "svg",
+    "template": {"$component": "asl/template"}
+  },
+  "metadata": {
+    "gameHeading": {}
+  },
+  "subsets": {
+    "letters": {
+      "label": "Letters",
+      "properties": {
+        "letter": {
+          "label": "Letter",
+          "config": {
+            "type": "string"
+          },
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["letter"],
+        "data": {"$component": "asl/letters"}
+      },
+      "selector": {
+        "label": {
+          "property": "letter"
+        },
+        "style": {
+          "buttonWidth": "2.5rem",
+          "symbolSize": 2,
+          "labelGap": 2
+        }
+      }
+    },
+    "digits": {
+      "label": "Digits",
+      "properties": {
+        "digit": {
+          "label": "Digit",
+          "config": {
+            "type": "string"
+          },
+          "active": true
+        }
+      },
+      "items": {
+        "properties": ["digit"],
+        "data": {"$component": "asl/digits"}
+      },
+      "selector": {
+        "label": {
+          "property": "digit"
+        },
+        "style": {
+          "buttonWidth": "2.5rem",
+          "symbolSize": 2,
+          "labelGap": 2
+        },
+        "block": {
+          "dimensions": [2, 5],
+          "grid": true
+        }
+      }
+    }
+  }
+}

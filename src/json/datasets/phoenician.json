@@ -41,7 +41,7 @@
   },
   "selector": {
     "label": {"property": "name"},
-    "style": {"buttonWidth": "5ch", "symbolSize": 1.5}
+    "style": {"buttonWidth": "5ch", "symbolSize": 1.1}
   },
   "items": {
     "properties": ["name", "transl", "meaning"],

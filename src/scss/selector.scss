@@ -42,7 +42,6 @@ $selectorBorderRadius: .25rem;
     --symbol-min-width: auto;
     --button-min-width: 0;
     --button-max-width: 1fr;
-    --label-gap: .1rem;
 
     &.selector-block-flex {
       display: flex;
@@ -112,7 +111,7 @@ $selectorBorderRadius: .25rem;
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
-    gap: var(--label-gap);
+    gap: calc(var(--label-gap, 1) * .1rem);
 
     border-radius: $selectorBorderRadius;
 
@@ -140,11 +139,11 @@ $selectorBorderRadius: .25rem;
 
   .letter-combination {
     min-width: var(--symbol-min-width);
-    padding-inline: .25em;
+    padding-inline: .25rem;
     font-weight: 600;
     transform-origin: center;
 
-    --base-font-size: 1.375rem;
+    --base-font-size: calc(var(--symbol-size, 1) * 1.375rem);
   }
 
   .letter {

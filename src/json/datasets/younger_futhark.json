@@ -26,7 +26,7 @@
       "gaps": "(6|2,3)"
     },
     "label": {"property": "name"},
-    "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch", "labelGap": "0.2rem"}
+    "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch", "labelGap": 2}
   },
   "properties": {
     "name": {
