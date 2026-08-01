@@ -1,10 +1,12 @@
-import {StringLetter, ImageLetter} from "./letter";
+import {StringLetter} from "./letter";
+import {ImageNodeable} from "./image";
 import {BrailleString} from "./braille";
+import {SVGNodeable} from "./svg";
 
 /**
- * @param {"string"|"braille"|"image"} type
+ * @param {"string"|"braille"|"image"|"svg"} type
  * @param {any} data
- * @returns {ImageLetter|StringLetter|BrailleString}
+ * @returns {ImageNodeable|StringLetter|BrailleString|SVGNodeable}
  */
 export function createNodeable(type, data) {
     switch (type) {
@@ -13,7 +15,9 @@ export function createNodeable(type, data) {
         case "braille":
             return new BrailleString(data);
         case "image":
-            return new ImageLetter(data);
+            return new ImageNodeable(data);
+        case "svg":
+            return new SVGNodeable(data);
         default:
             throw new Error("Invalid Letter type.");
     }

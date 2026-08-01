@@ -36,7 +36,7 @@
   "selector": {
     "font": {"key": "naskh", "weight": 650, "scale": 1.1},
     "label": {"property": "name"},
-    "style": {"buttonWidth": "4.8ch", "labelGap": ".25rem"}
+    "style": {"buttonWidth": "4.8ch", "labelGap": 2.5}
   },
   "forms": {
     "label": "Form",

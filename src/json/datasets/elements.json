@@ -53,7 +53,7 @@
         "rowLabels": [6, 7]
       }
     ],
-    "style": {"symbolSize": 1, "buttonMaxWidth": "4ch"},
+    "style": {"buttonMaxWidth": "4ch"},
     "defaultActive": "block0"
   },
   "game": {

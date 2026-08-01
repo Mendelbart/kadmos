@@ -33,7 +33,7 @@
   "selector": {
     "font": "serif",
     "label": {"property": "name"},
-    "style": {"buttonWidth": "5ch", "symbolSize": 1.35}
+    "style": {"buttonWidth": "5ch"}
   },
   "forms": {
     "data": {

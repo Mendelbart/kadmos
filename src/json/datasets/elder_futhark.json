@@ -19,7 +19,7 @@
     "font": {"weight": 700},
     "block": {"grid": true, "dimensions": [8, 3], "fillDirection": "columns", "columnLabels": [1,2,3], "rangeMode": "walkColumns"},
     "label": {"property": "name"},
-    "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch", "labelGap": "0.1rem"}
+    "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch"}
   },
   "properties": {
     "name": {

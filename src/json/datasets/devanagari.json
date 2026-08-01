@@ -34,7 +34,7 @@
           }
         }
       },
-      "single-dia": {
+      "singledia": {
         "label": "Template",
         "subsets": ["vowels"],
         "letterConfig": [{"form": "dia"}],
@@ -132,7 +132,7 @@
       "forms": {
         "data": {
           "ind": {"label": "Independent"},
-          "dia": {"label": "Diacritic", "combine": ["single-dia", "syllable"]}
+          "dia": {"label": "Diacritic", "combine": ["singledia", "syllable"]}
         },
         "exclusive": true,
         "label": "Form"

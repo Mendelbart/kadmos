@@ -50,7 +50,7 @@
               "description": "One of the keys set in the dataset.fonts object."
             }
           },
-          "additionalProperties": false
+          "unevaluatedProperties": false
         }
       ]
     },
@@ -63,47 +63,60 @@
           "default": false
         }
       },
-      "if": {
-        "properties": {
-          "grid": {"const": true}
-        }
-      },
-      "then": {
-        "properties": {
-          "dimensions": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "minimum": 1
+      "oneOf": [
+        {
+          "properties": {
+            "grid": {"const": true},
+            "dimensions": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "minLength": 2,
+              "maxLength": 2
             },
-            "minLength": 2,
-            "maxLength": 2
+            "columnLabels": {"$ref": "#/$defs/blockLabels"},
+            "rowLabels": {"$ref": "#/$defs/blockLabels"},
+            "columnLabelPosition": {
+              "enum": ["start", "end", "both"],
+              "default": "start"
+            },
+            "rowLabelPosition": {
+              "enum": ["start", "end", "both"],
+              "default": "start"
+            },
+            "columnLabelSpans": {
+              "type": "array",
+              "items": {"type": "number"}
+            },
+            "rowLabelSpans": {
+              "type": "array",
+              "items": {"type": "number"}
+            },
+            "rangeMode": {
+              "enum": ["grid", "walkRows", "walkColumns"],
+              "default": "grid",
+              "description": "How elements are selected using range selection."
+            },
+            "fillDirection": {
+              "enum": ["rows", "columns"],
+              "default": "rows",
+              "description": "How to fill the grid with items from the array."
+            },
+            "gaps": {"$ref": "#/$defs/matrixRanges"}
           },
-          "columnLabels": {"$ref": "#/$defs/blockLabels"},
-          "rowLabels": {"$ref": "#/$defs/blockLabels"},
-          "columnLabelPosition": {
-            "enum": ["start", "end", "both"],
-            "default": "start"
-          },
-          "rowLabelPosition": {
-            "enum": ["start", "end", "both"],
-            "default": "start"
-          },
-          "rangeMode": {
-            "enum": ["grid", "walkRows", "walkColumns"],
-            "default": "grid",
-            "description": "How elements are selected using range selection."
-          },
-          "fillDirection": {
-            "enum": ["rows", "columns"],
-            "default": "rows",
-            "description": "How to fill the grid with items from the array."
-          },
-          "gaps": {"$ref": "#/$defs/matrixRanges"}
+          "required": ["grid", "dimensions"]
         },
-        "required": ["dimensions"]
-      },
-      "additionalProperties": false
+        {
+          "not": {
+            "properties": {
+              "grid": {"const": true}
+            },
+            "required": ["grid"]
+          }
+        }
+      ]
     },
     "matrixRanges": {
       "type": "string",
@@ -142,20 +155,20 @@
           "default": 1
         },
         "labelGap": {
-          "type": "string",
-          "default": ".1rem"
+          "type": "number",
+          "default": 1
         },
         "symbolMinWidth": {
           "type": "string",
           "default": "auto"
         }
       },
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "quizAnswerConfig": {
       "type": "object",
       "required": ["type"],
-      "additionalProperties": false,
+      "unevaluatedProperties": false,
       "oneOf": [
         {
           "properties": {
@@ -195,7 +208,7 @@
                 }
               }
             },
-            "additionalProperties": false
+            "unevaluatedProperties": false
           }
         },
         {
@@ -220,7 +233,7 @@
                   "description": "Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average."
                 }
               },
-              "additionalProperties": false
+              "unevaluatedProperties": false
             }
           },
           "required": ["items"]
@@ -244,7 +257,7 @@
                   "description": "\"linear\" (default), \"log\" or \"log{BASE}\" where BASE is the log base to use, default base is 10."
                 }
               },
-              "additionalProperties": false
+              "unevaluatedProperties": false
             }
           }
         }
@@ -275,7 +288,7 @@
           "description": "Form value ranges."
         }
       },
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "letterKey": {
       "type": "string",
@@ -302,20 +315,22 @@
                 }
               },
               "required": ["label", "config"],
-              "additionalProperties": false
+              "unevaluatedProperties": false
             }
           },
-          "additionalProperties": false
+          "unevaluatedProperties": false
         },
         "selector": {
           "type": "object",
           "oneOf": [
-            {},
             {
               "properties": {
-                "block": {"$ref": "#/$defs/selectorBlock"}
+                "block": {
+                  "$ref": "#/$defs/selectorBlock",
+                  "unevaluatedProperties": false
+                }
               },
-              "required": ["block"]
+              "not": {"required": ["blocks"]}
             },
             {
               "properties": {
@@ -332,6 +347,7 @@
                         "description": "Python-like ranges or \"rest\" (default)."
                       }
                     },
+                    "unevaluatedProperties": false,
                     "required": ["letters"]
                   }
                 }
@@ -361,7 +377,7 @@
             "defaultActive": {"type": "string", "pattern": "^(all|none|block\\d+)$"},
             "defaultLetterKey":  { "$ref": "#/$defs/letterKey" }
           },
-          "additionalProperties": false
+          "unevaluatedProperties": false
         },
         "forms": {
           "type": "object",
@@ -375,7 +391,8 @@
                       "type": "object",
                       "properties": {
                         "combine": {
-                          "type": "string"
+                          "type": "array",
+                          "items": {"type": "string"}
                         }
                       },
                       "oneOf": [
@@ -399,7 +416,7 @@
                           "required": ["groupWith"]
                         }
                       ],
-                      "additionalProperties": false
+                      "unevaluatedProperties": false
                     },
                     {"type": "string"}
                   ],
@@ -419,7 +436,7 @@
             }
           },
           "required": ["data"],
-          "additionalProperties": false
+          "unevaluatedProperties": false
         },
         "items": {
           "type": "object",
@@ -436,40 +453,54 @@
               }
             },
             "data": {
-              "type": "array",
-              "items": {
-                "type": "array",
-                "prefixItems": [
-                  {
-                    "oneOf": [
-                      {"type": ["string", "null"]},
+              "oneOf": [
+                {"$ref": "#/$defs/component"},
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "prefixItems": [
                       {
-                        "type": "array",
-                        "items": {"type": "string"}
-                      }
-                    ]
-                  },
-                  {
-                    "oneOf": [
-                      {"type": ["string", "number"]},
+                        "oneOf": [
+                          {"type": ["string", "null"]},
+                          {
+                            "type": "array",
+                            "items": {"type": ["string", "array", "null"]}
+                          }
+                        ]
+                      },
                       {
-                        "type": "array",
-                        "items": {"type": ["string", "number"]}
+                        "oneOf": [
+                          {"type": ["string", "number"]},
+                          {
+                            "type": "array",
+                            "items": {"type": ["string", "number"]}
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "items": false
                   }
-                ],
-                "items": false
-              },
+                }
+              ],
               "description": "Array with [[...forms], [...properties]] entries matching the template. If first element is a string, it will be split into individual characters for forms. Use a single-item array if this isn't wanted."
             }
           },
           "required": ["properties", "data"],
-          "additionalProperties": false
+          "unevaluatedProperties": false
         }
       },
-      "required": ["properties", "selector", "items"],
-      "additionalProperties": false
+      "required": ["properties", "selector", "items"]
+    },
+    "component": {
+      "type": "object",
+      "properties": {
+        "$component": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["$component"]
     }
   },
   "title": "Kadmos Dataset",
@@ -483,10 +514,52 @@
       "type": "string",
       "description": "Name of the dataset"
     },
-    "letterType": {
-      "type": "string",
-      "default": "string",
-      "description": "Type of letter, use 'string' or 'braille'."
+    "letterConfig": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "default": "string",
+          "description": "Type of letter, use 'string', 'braille' or 'svg'."
+        }
+      },
+      "required": ["type"],
+      "anyOf": [
+        {
+          "properties": {
+            "type": {"const": "svg"},
+            "template": {
+              "oneOf": [
+                {"$ref": "#/$defs/component"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "string": {
+                      "type": "string",
+                      "description": "Template string with $key$ for key substitutions"
+                    },
+                    "keys": {
+                      "type": "array",
+                      "items": {"type": "string"},
+                      "description": "Keys in order used for the substitutions in the svg template."
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": ["string", "keys"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": ["braille", "string"]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     },
     "metadata": {
       "type": "object",
@@ -505,7 +578,7 @@
                 },
                 "font": {
                   "$ref": "#/$defs/fontRef",
-                  "additionalProperties": false
+                  "unevaluatedProperties": false
                 }
               }
             }
@@ -533,7 +606,7 @@
         "^_.+$": {"type": "string"}
       },
       "required": ["gameHeading"],
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "languages": {
       "type": "object",
@@ -546,7 +619,7 @@
         "default": {"type": "string"}
       },
       "required": ["keys"],
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "fonts": {
       "type": "object",
@@ -573,17 +646,17 @@
                 "params": {"$ref": "#/$defs/fontParams"}
               },
               "required": ["family"],
-              "additionalProperties": false
+              "unevaluatedProperties": false
             }
           },
-          "additionalProperties": false
+          "unevaluatedProperties": false
         },
         "params": {
           "$ref": "#/$defs/fontParams",
           "description": "Params applied to all fonts."
         }
       },
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "variants": {
       "type": "object",
@@ -654,7 +727,7 @@
         }
       },
       "required": ["data"],
-      "additionalProperties": false
+      "unevaluatedProperties": false
     },
     "game": {
       "type": "object",
@@ -671,19 +744,22 @@
     "anyOf": [
       {
         "properties": {
-          "letterType": {"const": "string"}
+          "letterConfig": {
+            "properties": {
+              "type": {"const": "string"}
+            }
+          }
         },
-        "required": ["letterType"]
+        "required": ["letterConfig"]
       },
       {
-        "not": {"required": ["letterType"]}
+        "not": {"required": ["letterConfig"]}
       }
     ]
   },
   "then": {
     "required": ["fonts"]
   },
-  "additionalProperties": false,
   "oneOf": [
     {
       "properties": {
@@ -702,7 +778,7 @@
                       "patternProperties": {
                         "^[a-z]+$": {"$ref": "#/$defs/letterRanges"}
                       },
-                      "additionalProperties": false
+                      "unevaluatedProperties": false
                     },
                     "defaultLetterKey": {
                       "type": "string"
@@ -716,7 +792,7 @@
               "required": ["label"]
             }
           },
-          "additionalProperties": false
+          "unevaluatedProperties": false
         },
         "combine": {
           "type": "object",
@@ -740,7 +816,7 @@
                       "type": "array",
                       "items": {
                         "oneOf": [
-                          {"const": null},
+                          {"type": "null"},
                           {
                             "type": "object",
                             "properties": {
@@ -748,7 +824,7 @@
                                 "type": "string"
                               }
                             },
-                            "additionalProperties": false
+                            "unevaluatedProperties": false
                           }
                         ]
                       }
@@ -766,10 +842,10 @@
                               }
                             }
                           },
-                          "additionalProperties": false
+                          "unevaluatedProperties": false
                         }
                       },
-                      "additionalProperties": false
+                      "unevaluatedProperties": false
                     },
                     "templates": {
                       "type": "array",
@@ -790,10 +866,10 @@
                       }
                     }
                   },
-                  "additionalProperties": false
+                  "unevaluatedProperties": false
                 }
               },
-              "additionalProperties": false
+              "unevaluatedProperties": false
             }
           }
         }
@@ -801,5 +877,6 @@
       "required": ["subsets"]
     },
     {"$ref": "#/$defs/subset"}
-  ]
+  ],
+  "unevaluatedProperties": false
 }

@@ -81,7 +81,8 @@ export class Dataset {
     constructor(data) {
         this.key = data.key;
         this.name = data.name;
-        this.letterType = data.letterType ?? "string";
+        this.letterConfig = data.letterConfig ?? {};
+        this.letterConfig.type ??= "string";
         this.metadata = this.processMetadata(data.metadata);
         if (data.fonts) this.fonts = this.processFonts(data.fonts);
         this.languages = data.languages ?? DEFAULT_LANGUAGES;
@@ -144,13 +145,16 @@ export class Dataset {
      * @returns {Record<string,DatasetSubset>}
      */
     processSubsets(data) {
-        if (!data.subsets) return Object.fromEntries([[DEFAULT_SUBSET_KEY, new DatasetSubset(DEFAULT_SUBSET_KEY, data)]]);
+        if (!data.subsets) {
+            data.letterConfig = this.letterConfig;
+            return Object.fromEntries([[DEFAULT_SUBSET_KEY, new DatasetSubset(DEFAULT_SUBSET_KEY, this.key, data)]]);
+        }
 
         const subsets = {};
         for (const [key, subset] of Object.entries(data.subsets)) {
             if (subset.variants) subset.variants = this.applyGlobalVariants(subset.variants, this.variants);
-            subset.letterType = this.letterType;
-            subsets[key] = new DatasetSubset(key, subset);
+            subset.letterConfig = this.letterConfig;
+            subsets[key] = new DatasetSubset(key, this.key, subset);
         }
         return subsets;
     }
@@ -437,7 +441,7 @@ export class Dataset {
         const data = this.metadata.gameHeading;
         const {type, lang, dir, string} = data;
         if (!type || type === "string" || type === "elements") {
-            const font = this.getFont(data.font, variant);
+            const font = this.hasFonts() ? this.getFont(data.font, variant) : null;
 
             if (type === "elements") {
                 const container = document.createElement("div");
@@ -450,7 +454,7 @@ export class Dataset {
                     els.push(el);
                 }
                 container.replaceChildren(...els);
-                font.applyTo(container);
+                if (font) font.applyTo(container);
 
                 return container;
             }
@@ -458,11 +462,13 @@ export class Dataset {
             const span = DOMUtils.createElement("span", string ?? "Kadmos");
             span.setAttribute("lang", lang ?? this.getLang());
             span.setAttribute("dir", dir ?? this.getDir());
-            font.applyTo(span);
+            if (font) font.applyTo(span);
 
             return span;
         } else if (type === "braille") {
-            return new BrailleString(string, 0, "bla").getNode();
+            return new BrailleString(string).getNode();
         }
+
+        return "Kadmos";
     }
 }

@@ -1,7 +1,7 @@
 import {Matrix, ObjectUtils, ParametricValue} from "../utils";
 import {range} from "../utils/array";
 import {DefaultListSplitter, QuizAnswerFactory} from "../quiz/answer";
-import {LetterCombination, Letter, createNodeable} from "../letter";
+import {LetterCombination, Letter, createNodeable, SVGNodeable} from "../letter";
 import {Selector, SelectorBlock, SelectorGridBlock} from "../selector";
 import {completeIndexSubsets, containsDuplicates, parseMatrixRanges, parseRanges} from "../utils/indices";
 import {ButtonGroup, ValueElement, SettingCollection} from "../settings";
@@ -14,27 +14,29 @@ const DEFAULT_FORMS = {
     exclusive: false
 };
 DEFAULT_FORMS.data[DEFAULT_FORM_KEY] = "Default";
-
+const IMAGE_ROOT = "assets/datasets/"
 
 
 export default class DatasetSubset {
     /**
      * @param key
+     * @param datasetKey
      * @param label
      * @param properties
      * @param items
      * @param selector
      * @param [forms]
      * @param [variants]
-     * @param [letterType]
+     * @param [letterConfig]
      */
-    constructor(key, {label, forms, properties, items, selector, variants, letterType = "string"}) {
+    constructor(key, datasetKey, {label, forms, properties, items, selector, variants, letterConfig}) {
         this.key = key;
+        this.datasetKey = datasetKey;
         this.label = label;
+        this.letterConfig = letterConfig;
         this.forms = this.processForms(forms);
         this.properties = this.processProperties(properties);
         this.variants = variants;
-        this.letterType = letterType;
 
         this.items = this.processItems(items);
         /** @type {Record<string, Map<*, number>>} */
@@ -167,7 +169,20 @@ export default class DatasetSubset {
      */
     processLetterForms(display) {
         display = this.standardizeLetterForms(display);
-        return ObjectUtils.map(display, str => createNodeable(this.letterType, str));
+        return ObjectUtils.map(display, data => this.getNodeable(data));
+    }
+
+    getNodeable(data) {
+        if (this.letterConfig.type === "svg") {
+            return SVGNodeable.fromTemplate(this.letterConfig.template, data);
+        }
+
+        if (this.letterConfig.type === "image") {
+            data = IMAGE_ROOT + this.datasetKey + "/" + data;
+            if (this.letterConfig.format) data += "." + this.letterConfig.format;
+        }
+
+        return createNodeable(this.letterConfig.type, data);
     }
 
     hasSetting(key) {

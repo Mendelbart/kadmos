@@ -1,0 +1,34 @@
+{
+  "key": "bsl",
+  "name": "BSL Fingerspelling",
+  "letterConfig": {
+    "type": "svg",
+    "template": {"$component": "bsl/template"}
+  },
+  "metadata": {
+    "gameHeading": {}
+  },
+  "properties": {
+    "letter": {
+      "label": "Letter",
+      "config": {
+        "type": "string"
+      },
+      "active": true
+    }
+  },
+  "items": {
+    "properties": ["letter"],
+    "data": {"$component": "bsl/letters"}
+  },
+  "selector": {
+    "label": {
+      "property": "letter"
+    },
+    "style": {
+      "buttonWidth": "3.5rem",
+      "symbolSize": 1.5,
+      "labelGap": 2
+    }
+  }
+}

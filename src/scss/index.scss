@@ -637,6 +637,10 @@ dialog {
   gap: .0625rem;
 }
 
+.image-nodeable, .svg-nodeable {
+  height: calc(var(--line-height, 1.2) * 1em);
+}
+
 
 .item-eval {
   display: flex;

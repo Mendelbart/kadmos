@@ -213,9 +213,9 @@ export default class DatasetMediator extends Observable {
     }
 
     setupObservers() {
-        this.settings.selector.observers.push(({forms, variant}, changed) => DOMUtils.transition(
+        this.settings.selector.observers.push((values, changed) => DOMUtils.transition(
             () => {
-                this.applySelectorSettings(forms, variant, changed);
+                this.applySelectorSettings(values, changed);
                 this.callObservers();
             },
             ["selector-forms"]
@@ -306,8 +306,7 @@ export default class DatasetMediator extends Observable {
     }
 
     readSelectorSettings() {
-        const {forms, variant} = this.settings.selector.getValues();
-        this.applySelectorSettings(forms, variant);
+        this.applySelectorSettings(this.settings.selector.getValues());
     }
 
     /**
@@ -315,8 +314,10 @@ export default class DatasetMediator extends Observable {
      * @param {string} [variant]
      * @param {"forms" | "variant" | null} [changed]
      */
-    applySelectorSettings(forms, variant, changed) {
+    applySelectorSettings({forms, variant}, changed) {
         const formKeys = this.subset.getFormKeysFromGrouped(forms);
+
+        this.selector.updateButtonContents(content => content.classList.add("font-transform"));
 
         if (!changed || changed === "forms") {
             this.selector.updateButtonContents(content => {
@@ -392,7 +393,7 @@ export default class DatasetMediator extends Observable {
     }
 
     cardLabelProperty() {
-        return Object.keys(this.subset.properties)[0];
+        return this.getActiveProperties()[0];
     }
 
     /**
@@ -411,7 +412,7 @@ export default class DatasetMediator extends Observable {
         const game = new Game(dealer, cardFactory);
         game.setReferenceItems(referenceItems, cardFactory);
 
-        switch (this.subset.letterType) {
+        switch (this.subset.letterConfig.type) {
             case "string":
                 game.addCardSettings(this.getFontSettings(), this.fontSettingsCallback(params.variant));
                 break;

@@ -125,7 +125,7 @@
         "style": {
           "buttonMaxWidth": "7ch",
           "buttonMinWidth": "4.5ch",
-          "labelGap": ".25rem"
+          "labelGap": 2.5
         }
       },
       "items": {

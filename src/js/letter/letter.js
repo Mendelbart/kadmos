@@ -70,31 +70,6 @@ export class StringLetter {
 }
 
 /** @implements Nodeable */
-export class ImageLetter {
-    /**
-     * @param {string} src
-     */
-    constructor(src) {
-        this.src = src;
-    }
-
-    /**
-     * @returns {HTMLImageElement}
-     */
-    getNode() {
-        const img = new Image();
-        img.src = this.src;
-        img.classList.add('letter-image');
-        return img;
-    }
-
-    stringValue() {
-        return this.src;
-    }
-}
-
-
-/** @implements Nodeable */
 export class LetterCombination {
     /**
      * @param {Letter[]} letters
