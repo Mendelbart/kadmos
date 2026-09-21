@@ -1,61 +1,90 @@
 {
-  "key": "younger_futhark",
-  "name": "Younger Futhark",
   "metadata": {
+    "key": "younger_futhark",
+    "name": "Younger Futhark",
     "gameHeading": {"string": "kadmos"},
     "terms": {"letter": "rune"}
   },
-  "fonts": {
-    "data": {
-      "junicode": {
-        "family": "Junicode",
-        "params": {
-          "styleset": "Younger-futhark, Long-branch-to-short-twig"
+  "letterConfig": {
+    "type": "string",
+    "fonts": {
+      "data": {
+        "junicode": {
+          "family": "Junicode",
+          "params": {
+            "styleset": "Younger-futhark, Long-branch-to-short-twig"
+          }
         }
       }
     }
   },
-  "selector": {
-    "font": {"weight": 700},
-    "block": {
-      "grid": true,
-      "dimensions": [6, 3],
-      "fillDirection": "columns",
-      "columnLabels": [1,2,3],
-      "rangeMode": "walkColumns",
-      "gaps": "(6|2,3)"
-    },
-    "label": {"property": "name"},
-    "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch", "labelGap": 2}
-  },
-  "properties": {
-    "name": {
-      "label": "Name",
-      "config": {
-        "type": "list",
-        "items": {
-          "type": "string",
-          "properties": {
-            "maxDist": 1,
-            "substitutions": {
-              "[ðþ]": "th",
-              "ʀ": "r"
+  "subsets": {
+    "runes": {
+      "label": "Runes",
+      "selector": {
+        "font": {"params": {"weight": 700}},
+        "blocks": [{
+          "grid": true,
+          "dimensions": [6, 3],
+          "fillDirection": "columns",
+          "columnLabels": ["1","2","3"],
+          "rangeMode": "walkColumns",
+          "gaps": "(6|2,3)"
+        }],
+        "label": {"property": "name"},
+        "style": {"buttonMinWidth": "4ch", "buttonMaxWidth": "7ch", "labelGap": 2}
+      },
+      "properties": {
+        "name": {
+          "label": "Name",
+          "config": {
+            "type": "list",
+            "items": {
+              "type": "string",
+              "properties": {
+                "maxDist": 1,
+                "substitutions": [
+                  {"pattern": "[ðþ]", "repl": ["th"]},
+                  {"pattern":  "ʀ", "repl": ["r"]}
+                ]
+              }
+            }
+          },
+          "active": true
+        },
+        "meaning": {
+          "label": "Meaning",
+          "config": {
+            "type": "list",
+            "items": {
+              "type": "string",
+              "properties": {
+                "maxDist": 1
+              }
             }
           }
         }
       },
-      "active": true
-    },
-    "meaning": {
-      "label": "Meaning",
-      "config": {
-        "type": "list",
-        "items": {
-          "type": "string",
-          "properties": {
-            "maxDist": 1
-          }
-        }
+      "items": {
+        "properties": ["name", "meaning"],
+        "data": [
+          [["f"], ["fé", "wealth"]],
+          [["u"], ["úr", "drizzle, rain"]],
+          [["þ"], ["þurs", "thurs"]],
+          [["ą"], ["áss/óss", "god"]],
+          [["r"], ["reið", "ride"]],
+          [["k"], ["kaun", "ulcer"]],
+          [["h"], ["hagall", "hail"]],
+          [["n"], ["nauðʀ", "need"]],
+          [["i"], ["íss", "ice"]],
+          [["a"], ["ár", "plenty"]],
+          [["s"], ["sól", "Sun"]],
+          [["t"], ["Týʀ", "Týr (deity)"]],
+          [["b"], ["bjǫrk/bjarkan", "birch"]],
+          [["m"], ["maðʀ", "man, human"]],
+          [["l"], ["lǫgʀ", "sea"]],
+          [["ʀ"], ["ýʀ", "yew"]]
+        ]
       }
     }
   },
@@ -63,37 +92,23 @@
     "data": {
       "longbranch": {
         "label": "Long-branch",
-        "fonts": {
-          "junicode": {"styleset": "Younger-futhark"}
+        "fontParams": {
+          "junicode": {
+            "styleset": "Younger-futhark"
+          }
         }
       },
       "shorttwig": {
-        "label": "Short-twig"
+        "label": "Short-twig",
+        "fontParams": {
+          "junicode": {
+            "styleset": "Younger-futhark, Long-branch-to-short-twig"
+          }
+        }
       }
     },
     "setting": {
       "type": "buttonGroup"
     }
-  },
-  "items": {
-    "properties": ["name", "meaning"],
-    "data": [
-      ["f", ["fé", "wealth"]],
-      ["u", ["úr", "drizzle, rain"]],
-      ["þ", ["þurs", "thurs"]],
-      ["ą", ["áss/óss", "god"]],
-      ["r", ["reið", "ride"]],
-      ["k", ["kaun", "ulcer"]],
-      ["h", ["hagall", "hail"]],
-      ["n", ["nauðʀ", "need"]],
-      ["i", ["íss", "ice"]],
-      ["a", ["ár", "plenty"]],
-      ["s", ["sól", "Sun"]],
-      ["t", ["Týʀ", "Týr (deity)"]],
-      ["b", ["bjǫrk/bjarkan", "birch"]],
-      ["m", ["maðʀ", "man, human"]],
-      ["l", ["lǫgʀ", "sea"]],
-      ["ʀ", ["ýʀ", "yew"]]
-    ]
   }
 }

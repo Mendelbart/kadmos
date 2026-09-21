@@ -1,135 +1,143 @@
 {
-  "key": "japanese",
-  "name": "Japanese Kana",
   "metadata": {
-    "gameHeading": {"string": "カドモス", "font": {"weight": 800}},
+    "key": "japanese",
+    "name": "Japanese Kana",
+    "gameHeading": {"string": "カドモス", "font": {"params": {"weight": 800}}},
     "terms": {"letter": "kana", "letters": "kana"},
     "lang": "ja"
   },
-  "fonts": {
-    "data": {
-      "sans": {"family": "Noto Sans Japanese", "label": "Sans", "default": true},
-      "serif": {"family": "Noto Serif Japanese", "label": "Serif"}
-    }
-  },
-  "properties": {
-    "roman": {
-      "label": "Transliteration",
-      "config": {
-        "type": "string"
+  "letterConfig": {
+    "type": "string",
+    "fonts": {
+      "data": {
+        "sans": {"family": "Noto Sans Japanese", "label": "Sans", "default": true},
+        "serif": {"family": "Noto Serif Japanese", "label": "Serif"}
       }
     }
   },
-  "selector": {
-    "font": {"key": "sans", "weight": 600, "lineHeight": 1.05},
-    "blocks": [
-      {
-        "grid": true,
-        "letters": "1:45",
-        "dimensions": [10, 5],
-        "gaps": "(8|2,4);(10|2:4)",
-        "rowLabels": "∅kstnhmyrw",
-        "columnLabels": "aiueo"
+  "subsets": {
+    "letters": {
+      "label": "Letters",
+      "properties": {
+        "roman": {
+          "label": "Transliteration",
+          "config": {
+            "type": "string"
+          }
+        }
       },
-      {
-        "grid": true,
-        "letters": "46:70",
-        "dimensions": [5, 5],
-        "rowLabels": "gzdbp",
-        "columnLabels": "aiueo"
+      "selector": {
+        "font": {"key": "sans", "params": {"weight": 600, "lineHeight": 1.05}},
+        "blocks": [
+          {
+            "grid": true,
+            "letters": {"i1": "1:45"},
+            "dimensions": [10, 5],
+            "gaps": "(8|2,4);(10|2:4)",
+            "rowLabels": ["∅","k","s","t","n","h","m","y","r","w"],
+            "columnLabels": ["a","i","u","e","o"]
+          },
+          {
+            "grid": true,
+            "letters": {"i1": "46:70"},
+            "dimensions": [5, 5],
+            "rowLabels": ["g","z","d","b","p"],
+            "columnLabels": ["a","i","u","e","o"]
+          },
+          {
+            "grid": true,
+            "letters": {"i1": "71"},
+            "dimensions": [1, 1],
+            "rowLabels": ["n"]
+          }
+        ],
+        "style": {"buttonMaxWidth": "4ch"},
+        "defaultActive": "block0"
       },
-      {
-        "grid": true,
-        "letters": "71",
-        "dimensions": [1, 1],
-        "rowLabels": "n"
+      "forms": {
+        "label": "Kana",
+        "data": {
+          "hira": {"label": "Hiragana", "active": true},
+          "kata": {"label": "Katakana"}
+        },
+        "exclusive": true
+      },
+      "items": {
+        "properties": ["roman"],
+        "data": [
+          [["あ", "ア"], ["a"]],
+          [["い", "イ"], ["i"]],
+          [["う", "ウ"], ["u"]],
+          [["え", "エ"], ["e"]],
+          [["お", "オ"], ["o"]],
+          [["か", "カ"], ["ka"]],
+          [["き", "キ"], ["ki"]],
+          [["く", "ク"], ["ku"]],
+          [["け", "ケ"], ["ke"]],
+          [["こ", "コ"], ["ko"]],
+          [["さ", "サ"], ["sa"]],
+          [["し", "シ"], ["shi"]],
+          [["す", "ス"], ["su"]],
+          [["せ", "セ"], ["se"]],
+          [["そ", "ソ"], ["so"]],
+          [["た", "タ"], ["ta"]],
+          [["ち", "チ"], ["chi"]],
+          [["つ", "ツ"], ["tsu"]],
+          [["て", "テ"], ["te"]],
+          [["と", "ト"], ["to"]],
+          [["な", "ナ"], ["na"]],
+          [["に", "ニ"], ["ni"]],
+          [["ぬ", "ヌ"], ["nu"]],
+          [["ね", "ネ"], ["ne"]],
+          [["の", "ノ"], ["no"]],
+          [["は", "ハ"], ["ha"]],
+          [["ひ", "ヒ"], ["hi"]],
+          [["ふ", "フ"], ["fu"]],
+          [["へ", "ヘ"], ["he"]],
+          [["ほ", "ホ"], ["ho"]],
+          [["ま", "マ"], ["ma"]],
+          [["み", "ミ"], ["mi"]],
+          [["む", "ム"], ["mu"]],
+          [["め", "メ"], ["me"]],
+          [["も", "モ"], ["mo"]],
+          [["や", "ヤ"], ["ya"]],
+          [["ゆ", "ユ"], ["yu"]],
+          [["よ", "ヨ"], ["yo"]],
+          [["ら", "ラ"], ["ra"]],
+          [["り", "リ"], ["ri"]],
+          [["る", "ル"], ["ru"]],
+          [["れ", "レ"], ["re"]],
+          [["ろ", "ロ"], ["ro"]],
+          [["わ", "ワ"], ["wa"]],
+          [["を", "ヲ"], ["wo"]],
+          [["が", "ガ"], ["ga"]],
+          [["ぎ", "ギ"], ["gi"]],
+          [["ぐ", "グ"], ["gu"]],
+          [["げ", "ゲ"], ["ge"]],
+          [["ご", "ゴ"], ["go"]],
+          [["ざ", "ザ"], ["za"]],
+          [["じ", "ジ"], ["ji"]],
+          [["ず", "ズ"], ["zu"]],
+          [["ぜ", "ゼ"], ["ze"]],
+          [["ぞ", "ゾ"], ["zo"]],
+          [["だ", "ダ"], ["da"]],
+          [["ぢ", "ヂ"], ["ji"]],
+          [["づ", "ヅ"], ["zu"]],
+          [["で", "デ"], ["de"]],
+          [["ど", "ド"], ["do"]],
+          [["ば", "バ"], ["ba"]],
+          [["び", "ビ"], ["bi"]],
+          [["ぶ", "ブ"], ["bu"]],
+          [["べ", "ベ"], ["be"]],
+          [["ぼ", "ボ"], ["bo"]],
+          [["ぱ", "パ"], ["pa"]],
+          [["ぴ", "ピ"], ["pi"]],
+          [["ぷ", "プ"], ["pu"]],
+          [["ぺ", "ペ"], ["pe"]],
+          [["ぽ", "ポ"], ["po"]],
+          [["ん", "ン"], ["n"]]
+        ]
       }
-    ],
-    "style": {"buttonMaxWidth": "4ch"},
-    "defaultActive": "block0"
-  },
-  "forms": {
-    "label": "Kana",
-    "data": {
-      "hira": {"label": "Hiragana", "active": true},
-      "kata": "Katakana"
-    },
-    "exclusive": true
-  },
-  "items": {
-    "properties": ["roman"],
-    "data": [
-      ["あア", "a"],
-      ["いイ", "i"],
-      ["うウ", "u"],
-      ["えエ", "e"],
-      ["おオ", "o"],
-      ["かカ", "ka"],
-      ["きキ", "ki"],
-      ["くク", "ku"],
-      ["けケ", "ke"],
-      ["こコ", "ko"],
-      ["さサ", "sa"],
-      ["しシ", "shi"],
-      ["すス", "su"],
-      ["せセ", "se"],
-      ["そソ", "so"],
-      ["たタ", "ta"],
-      ["ちチ", "chi"],
-      ["つツ", "tsu"],
-      ["てテ", "te"],
-      ["とト", "to"],
-      ["なナ", "na"],
-      ["にニ", "ni"],
-      ["ぬヌ", "nu"],
-      ["ねネ", "ne"],
-      ["のノ", "no"],
-      ["はハ", "ha"],
-      ["ひヒ", "hi"],
-      ["ふフ", "fu"],
-      ["へヘ", "he"],
-      ["ほホ", "ho"],
-      ["まマ", "ma"],
-      ["みミ", "mi"],
-      ["むム", "mu"],
-      ["めメ", "me"],
-      ["もモ", "mo"],
-      ["やヤ", "ya"],
-      ["ゆユ", "yu"],
-      ["よヨ", "yo"],
-      ["らラ", "ra"],
-      ["りリ", "ri"],
-      ["るル", "ru"],
-      ["れレ", "re"],
-      ["ろロ", "ro"],
-      ["わワ", "wa"],
-      ["をヲ", "wo"],
-      ["がガ", "ga"],
-      ["ぎギ", "gi"],
-      ["ぐグ", "gu"],
-      ["げゲ", "ge"],
-      ["ごゴ", "go"],
-      ["ざザ", "za"],
-      ["じジ", "ji"],
-      ["ずズ", "zu"],
-      ["ぜゼ", "ze"],
-      ["ぞゾ", "zo"],
-      ["だダ", "da"],
-      ["ぢヂ", "ji"],
-      ["づヅ", "zu"],
-      ["でデ", "de"],
-      ["どド", "do"],
-      ["ばバ", "ba"],
-      ["びビ", "bi"],
-      ["ぶブ", "bu"],
-      ["べベ", "be"],
-      ["ぼボ", "bo"],
-      ["ぱパ", "pa"],
-      ["ぴピ", "pi"],
-      ["ぷプ", "pu"],
-      ["ぺペ", "pe"],
-      ["ぽポ", "po"],
-      ["んン", "n"]
-    ]
+    }
   }
 }

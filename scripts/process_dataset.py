@@ -59,7 +59,7 @@ def process_dataset(filename: str):
     try:
         validate_dataset(dataset)
     except ValidationError as e:
-        raise ValueError("Invalid dataset.", e)
+        raise ValueError("Invalid dataset.", e.context[0])
 
     insert_components(dataset)
     try:
@@ -76,4 +76,7 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2:
         process_dataset(sys.argv[1])
     else:
-        process_dataset(os.path.join(DATASETS_SRC_DIR, "asl.json"))
+        for e in os.scandir(DATASETS_SRC_DIR):
+            if e.is_file():
+                print(e.name)
+                process_dataset(e.path)

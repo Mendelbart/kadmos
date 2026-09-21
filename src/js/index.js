@@ -7,9 +7,5 @@ import {setup} from "./context.js";
         DOMUtils.setupRibbon(element, element.classList.contains("ribbon-closable"));
     });
 
-    document.querySelectorAll(".pages-container").forEach((element) => {
-        DOMUtils.setupPages(element);
-    });
-
     setup();
 })();

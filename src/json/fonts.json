@@ -100,8 +100,6 @@
   },
   {
     "family": "Noto Sans Devanagari",
-    "fallback": "system-ui, sans-serif",
-    "lineHeight": 1,
     "variationSettings": {
       "wght": "100 900",
       "wdth": "100"
@@ -111,7 +109,6 @@
     "family": "Noto Serif Devanagari",
     "fallback": "serif",
     "shift": 0.1,
-    "lineHeight": 1,
     "variationSettings": {
       "wght": "100 900",
       "wdth": "100"
@@ -126,11 +123,10 @@
     }
   },
   {
-  "family": "Noto Sans Korean",
-  "fallback": "system-ui, sans-serif",
-  "shift": -0.1,
-  "variationSettings": {
-    "wght": "100 900"
+    "family": "Noto Sans Korean",
+    "shift": -0.1,
+    "variationSettings": {
+      "wght": "100 900"
+    }
   }
-}
 ]

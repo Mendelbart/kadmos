@@ -1,22 +1,26 @@
 {
-  "key": "devanagari",
-  "name": "Devanagari",
   "metadata": {
+    "key": "devanagari",
+    "name": "Devanagari",
     "gameHeading": {"string":  "कैडमोस"},
-    "lang": "hi",
+    "lang": "inc-Deva",
     "dir": "ltr"
   },
-  "fonts": {
-    "data": {
-      "serif": {
-        "family": "Noto Serif Devanagari",
-        "label": "Serif",
-        "default": true
+  "letterConfig": {
+    "type": "string",
+    "fonts": {
+      "data": {
+        "serif": {
+          "family": "Noto Serif Devanagari",
+          "label": "Serif",
+          "default": true
+        },
+        "sans": {
+          "family": "Noto Sans Devanagari",
+          "label": "Sans"
+        }
       },
-      "sans": {
-        "family": "Noto Sans Devanagari",
-        "label": "Sans"
-      }
+      "manualUnicodes": "25CC"
     }
   },
   "combine": {
@@ -65,46 +69,46 @@
       "items": {
         "properties": ["name", "transl"],
         "data": [
-          ["क", ["ka", "k"]],
-          ["ख", ["kha", "kh"]],
-          ["ग", ["ga", "g"]],
-          ["घ", ["gha", "gh"]],
-          ["ङ", ["ṅa", "ṅ"]],
-          ["ह", ["ha", "h"]],
-          ["च", ["ca", "c"]],
-          ["छ", ["cha", "ch"]],
-          ["ज", ["ja", "j"]],
-          ["झ", ["jha", "jh"]],
-          ["ञ", ["ña", "ñ"]],
-          ["य", ["ya", "y"]],
-          ["श", ["śa", "ś"]],
-          ["ट", ["ṭa", "ṭ"]],
-          ["ठ", ["ṭha", "ṭh"]],
-          ["ड", ["ḍa", "ḍ"]],
-          ["ढ", ["ḍha", "ḍh"]],
-          ["ण", ["ṇa", "ṇ"]],
-          ["र", ["ra", "r"]],
-          ["ष", ["ṣa", "ṣ"]],
-          ["त", ["ta", "t"]],
-          ["थ", ["tha", "th"]],
-          ["द", ["da", "d"]],
-          ["ध", ["dha", "dh"]],
-          ["न", ["na", "n"]],
-          ["ल", ["la", "l"]],
-          ["स", ["sa", "s"]],
-          ["प", ["pa", "p"]],
-          ["फ", ["pha", "ph"]],
-          ["ब", ["ba", "b"]],
-          ["भ", ["bha", "bh"]],
-          ["म", ["ma", "m"]],
-          ["व", ["va", "v"]]
+          [["क"], ["ka", "k"]],
+          [["ख"], ["kha", "kh"]],
+          [["ग"], ["ga", "g"]],
+          [["घ"], ["gha", "gh"]],
+          [["ङ"], ["ṅa", "ṅ"]],
+          [["ह"], ["ha", "h"]],
+          [["च"], ["ca", "c"]],
+          [["छ"], ["cha", "ch"]],
+          [["ज"], ["ja", "j"]],
+          [["झ"], ["jha", "jh"]],
+          [["ञ"], ["ña", "ñ"]],
+          [["य"], ["ya", "y"]],
+          [["श"], ["śa", "ś"]],
+          [["ट"], ["ṭa", "ṭ"]],
+          [["ठ"], ["ṭha", "ṭh"]],
+          [["ड"], ["ḍa", "ḍ"]],
+          [["ढ"], ["ḍha", "ḍh"]],
+          [["ण"], ["ṇa", "ṇ"]],
+          [["र"], ["ra", "r"]],
+          [["ष"], ["ṣa", "ṣ"]],
+          [["त"], ["ta", "t"]],
+          [["थ"], ["tha", "th"]],
+          [["द"], ["da", "d"]],
+          [["ध"], ["dha", "dh"]],
+          [["न"], ["na", "n"]],
+          [["ल"], ["la", "l"]],
+          [["स"], ["sa", "s"]],
+          [["प"], ["pa", "p"]],
+          [["फ"], ["pha", "ph"]],
+          [["ब"], ["ba", "b"]],
+          [["भ"], ["bha", "bh"]],
+          [["म"], ["ma", "m"]],
+          [["व"], ["va", "v"]]
         ]
       },
       "selector": {
         "label": {
           "property": "name"
         },
-        "block": {
+        "blocks": [{
           "grid": true,
           "dimensions": [8, 5],
           "fillDirection": "columns",
@@ -112,7 +116,7 @@
           "rowLabels": ["occlu­sive", "nasal", "approx­imant", "frica­tive"],
           "rowLabelSpans": [4, 1, 1, 2],
           "columnLabels": ["velar", "palatal", "retro­flex", "dental", "labial"]
-        },
+        }],
         "style": {
           "buttonWidth": "2.375rem"
         }
@@ -140,33 +144,32 @@
       "items": {
         "properties": ["transl"],
         "data": [
-          [["अ", ""], "a"],
-          [["इ", "ि"], "i"],
-          [["उ", "ु"], "u"],
-          [["ऋ", "ृ"], "ṛ"],
-          [["ऌ", "ॢ"], "ḷ"],
-          [["ए", "े"], "e"],
-          [["ओ", "ो"], "o"],
-          [[null, "ं"], "ṃ"],
-          [["आ", "ा"], "ā"],
-          [["ई", "ी"], "ī"],
-          [["ऊ", "ू"], "ū"],
-          [["ॠ", "ॄ"], "ṝ"],
-          [["ॡ", "ॣ"], "ḹ"],
-          [["ऐ", "ै"], "ai"],
-          [["औ", "ौ"], "au"],
-          [[null, "ः"], "ḥ"]
+          [["अ", ""], ["a"]],
+          [["आ", "ा"], ["ā"]],
+          [["इ", "ि"], ["i"]],
+          [["ई", "ी"], ["ī"]],
+          [["उ", "ु"], ["u"]],
+          [["ऊ", "ू"], ["ū"]],
+          [["ऋ", "ृ"], ["r̥"]],
+          [["ॠ", "ॄ"], ["r̥̄"]],
+          [["ऌ", "ॢ"], ["l̥"]],
+          [["ॡ", "ॣ"], ["l̥̄"]],
+          [["ऄऎ", "ॆ"], ["e"]],
+          [["ॲऍ", "ॅ"], ["ê"]],
+          [["ए", "े"], ["ē"]],
+          [["ऐ", "ै"], ["ai"]],
+          [["ऒ", "ॊ"], ["o"]],
+          [["ऑ", "ॉ"], ["ô"]],
+          [["ओ", "ो"], ["ō"]],
+          [["औ", "ौ"], ["au"]],
+          [["अं", "ं"], ["ṃ"]],
+          [["अँ", "ँ"], ["m̐"]],
+          [["अः", "ः"], ["ḥ"]]
         ]
       },
       "selector": {
         "label": {
           "property": "transl"
-        },
-        "block": {
-          "grid": true,
-          "dimensions": [8, 2],
-          "fillDirection": "columns",
-          "rowLabels": ["velar", "palatal", "labial", "retro­flex", "dental", "palato­velar", "labio­velar", null]
         },
         "style": {
           "buttonWidth": "2.75rem"

@@ -24,7 +24,11 @@ def main():
             logger.error("ValidationError: ", file.name, e)
             continue
 
-        meta[data["key"]] = {"name": data["name"], "file": path.relpath(file.name, DATASETS_SRC_DIR)}
+        key = data["metadata"]["key"]
+        name = data["metadata"]["name"]
+        filepath = path.relpath(file.name, DATASETS_SRC_DIR)
+
+        meta[key] = {"name": name, "file": filepath}
 
     meta = dict(sorted(meta.items(), key=lambda x: x[1]["name"]))
     with open(path.join(JSON_SRC_DIR, "datasets_meta.json"), "w") as metafile:

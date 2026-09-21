@@ -3,13 +3,23 @@
   "$id": "https://example.com/dataset.schema.json",
   "$defs": {
     "fontWeight": {
+      "title": "Font Weight",
       "type": "integer",
-      "description": "Font weight.",
       "minimum": 100,
-      "maximum": 900
+      "maximum": 900,
+      "default": 500,
+      "x-format": "range",
+      "x-inputAttributes": {
+        "step": "25"
+      }
     },
     "fontParams": {
+      "title": "Font Params",
+      "x-interface": "Font Params",
       "type": "object",
+      "x-format": "grid",
+      "x-startCollapsed": true,
+      "x-enableCollapseToggle": true,
       "properties": {
         "weight": {"$ref": "#/$defs/fontWeight"},
         "scale": {
@@ -35,37 +45,32 @@
           "type": "number",
           "description": "CSS line-height property."
         }
-      }
+      },
+      "additionalProperties": false
     },
     "fontRef": {
-      "description": "A string input is equivalent to {\"key\": \"{STRING}\"}.",
-      "anyOf": [
-        {"type": "string"},
-        {
-          "type": "object",
-          "allOf": [{"$ref": "#/$defs/fontParams"}],
-          "properties": {
-            "key": {
-              "type": "string",
-              "description": "One of the keys set in the dataset.fonts object."
-            }
-          },
-          "unevaluatedProperties": false
-        }
-      ]
+      "type": "object",
+      "title": "Font Reference",
+      "x-interface": "Font Reference",
+      "properties": {
+        "key": {
+          "type": "string",
+          "title": "Key",
+          "description": "One of the keys set in the letterConfig.fonts object."
+        },
+        "params": {"$ref": "#/$defs/fontParams"}
+      },
+      "additionalProperties": false
     },
     "selectorBlock": {
+      "title": "Selector Block",
+      "x-interface": "Selector Block",
       "type": "object",
-      "properties": {
-        "style": {"$ref": "#/$defs/blockStyle"},
-        "grid": {
-          "type": "boolean",
-          "default": false
-        }
-      },
       "oneOf": [
         {
+          "x-interface": "Selector Grid Block",
           "properties": {
+            "style": {"$ref": "#/$defs/blockStyle"},
             "grid": {"const": true},
             "dimensions": {
               "type": "array",
@@ -74,16 +79,19 @@
                 "minimum": 1
               },
               "minLength": 2,
-              "maxLength": 2
+              "maxLength": 2,
+              "tsType": "[number, number]"
             },
             "columnLabels": {"$ref": "#/$defs/blockLabels"},
             "rowLabels": {"$ref": "#/$defs/blockLabels"},
             "columnLabelPosition": {
               "enum": ["start", "end", "both"],
+              "x-enumTitles": ["Start", "End", "Start & End"],
               "default": "start"
             },
             "rowLabelPosition": {
               "enum": ["start", "end", "both"],
+              "x-enumTitles": ["Start", "End", "Start & End"],
               "default": "start"
             },
             "columnLabelSpans": {
@@ -95,12 +103,16 @@
               "items": {"type": "number"}
             },
             "rangeMode": {
+              "title": "Grid Range Mode",
+              "x-interface": "Grid Range Mode",
               "enum": ["grid", "walkRows", "walkColumns"],
+              "x-enumTitles": ["Grid", "Walk Rows", "Walk Columns"],
               "default": "grid",
               "description": "How elements are selected using range selection."
             },
             "fillDirection": {
               "enum": ["rows", "columns"],
+              "x-enumTitles": ["Rows", "Columns"],
               "default": "rows",
               "description": "How to fill the grid with items from the array."
             },
@@ -109,11 +121,9 @@
           "required": ["grid", "dimensions"]
         },
         {
-          "not": {
-            "properties": {
-              "grid": {"const": true}
-            },
-            "required": ["grid"]
+          "properties": {
+            "style": {"$ref": "#/$defs/blockStyle"},
+            "grid": {"const": false}
           }
         }
       ]
@@ -124,19 +134,17 @@
       "description": "Comma-separated list of 'rectangle' ranges (ROWS|COLUMNS), where ROWS and COLUMNS are in range-syntax."
     },
     "blockLabels": {
-      "description": "If string, split up into characters as labels. Use null for a gap instead of a label.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": ["string", "integer", "null"]
-          }
-        },
-        {"type": "string"}
-      ]
+      "type": "array",
+      "items": {
+        "type": ["string", "null"]
+      },
+      "description": "If string, split up into characters as labels. Use null for a gap instead of a label."
     },
     "blockStyle": {
+      "title": "Selector Block Style",
+      "x-interface": "Selector Block Style",
       "type": "object",
+      "x-format": "grid",
       "properties": {
         "buttonWidth": {
           "type": "string",
@@ -154,97 +162,103 @@
           "type": "number",
           "default": 1
         },
-        "labelGap": {
-          "type": "number",
-          "default": 1
-        },
         "symbolMinWidth": {
           "type": "string",
           "default": "auto"
+        },
+        "labelGap": {
+          "type": "number",
+          "default": 1
         }
       },
-      "unevaluatedProperties": false
+      "additionalProperties": false
     },
     "quizAnswerConfig": {
-      "type": "object",
-      "required": ["type"],
-      "unevaluatedProperties": false,
+      "x-interface": "Quiz Answer Config",
+      "title": "Answer Config",
       "oneOf": [
         {
+          "type": "object",
+          "x-switcherTitle": "String",
           "properties": {
             "type": {
               "const": "string"
             },
             "properties": {
               "type": "object",
+              "x-interface": "String Answer Config",
+              "title": "Config",
               "properties": {
                 "maxDist": {
                   "type": "integer",
+                  "minimum": 0,
                   "default": 0,
                   "description": "Maximum distance (optimal string alignment) to pass."
                 },
                 "maxDistMult": {
                   "type": "number",
-                  "description": "If value is n, add 1 to maxDist for every n characters of the word."
+                  "description": "If value is n, add 1 to maxDist for every n characters of the word.",
+                  "minimum": 0,
+                  "default": 0
                 },
                 "substitutions": {
-                  "type": "object",
-                  "description": "Search-replace key-value entries, using regular expressions, to describe equivalent substitutions that the answerer can use."
+                  "type": "array",
+                  "description": "Search-replace entries, using regular expressions, to describe equivalent substitutions that the answerer can use.",
+                  "x-format": "table-object",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "pattern": {
+                        "type": "string"
+                      },
+                      "repl": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false,
+                    "required": ["pattern", "repl"]
+                  }
                 },
                 "forceSubstitutions": {
+                  "title": "Force substitutions",
                   "type": "boolean",
                   "default": false,
                   "description": "If true, the substitutions need to be used if applicable."
                 },
                 "caseSensitive": {
+                  "title": "Case-sensitive",
                   "type": "boolean",
                   "default": false,
-                  "description": "Whether the answer is case sensitive."
+                  "description": "Whether the answer is case-sensitive."
                 },
                 "ignoreBrackets": {
+                  "title": "Ignored brackets contents",
                   "type": "string",
                   "default": "(",
-                  "description": "Used to ignore content in brackets or parentheses for grading. String of opening bracket characters, e.g. \"([\" to ignore (...) and [...]. Default: \"(\"."
-                }
-              }
-            },
-            "unevaluatedProperties": false
-          }
-        },
-        {
-          "properties": {
-            "type": {
-              "const": "list"
-            },
-            "items": {
-              "$ref": "#/$defs/quizAnswerConfig"
-            },
-            "properties": {
-              "type": "object",
-              "properties": {
-                "splitter": {
-                  "type": "string",
-                  "default": "[,/]",
-                  "description": "RegExp to split input into list of answers."
-                },
-                "gradeMode": {
-                  "enum": ["one", "all"],
-                  "default": "one",
-                  "description": "Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average."
+                  "description": "Used to ignore content in brackets or parentheses for grading. String of opening bracket characters, e.g. \"([\" to ignore (...) and [...]."
                 }
               },
-              "unevaluatedProperties": false
+              "additionalProperties": false
             }
           },
-          "required": ["items"]
+          "required": ["type"],
+          "additionalProperties": false
         },
         {
+          "type": "object",
+          "x-switcherTitle": "Numeric",
           "properties": {
             "type": {
-              "enum": ["number", "integer"]
+              "type": "string",
+              "enum": ["number", "integer"],
+              "x-enumTitles": ["Number", "Integer"]
             },
             "properties": {
               "type": "object",
+              "title": "Number Answer Config",
               "properties": {
                 "maxDist": {
                   "type": "number",
@@ -256,17 +270,56 @@
                   "default": "linear",
                   "description": "\"linear\" (default), \"log\" or \"log{BASE}\" where BASE is the log base to use, default base is 10."
                 }
-              },
-              "unevaluatedProperties": false
+              }
             }
-          }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "x-interface": "List Answer Config",
+          "title": "List Answer Config",
+          "x-switcherTitle": "List",
+          "properties": {
+            "type": {
+              "const": "list"
+            },
+            "properties": {
+              "type": "object",
+              "x-format": "grid",
+              "properties": {
+                "splitter": {
+                  "type": "string",
+                  "default": "[,/]",
+                  "description": "RegExp to split input into list of answers."
+                },
+                "gradeMode": {
+                  "enum": ["one", "all"],
+                  "x-enumTitles": ["Match One", "Match All"],
+                  "default": "one",
+                  "description": "Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average."
+                }
+              }
+            },
+            "items": {
+              "title": "Items",
+              "$ref": "#/$defs/quizAnswerConfig"
+            }
+          },
+          "required": ["type", "items"],
+          "additionalProperties": false
         }
       ]
     },
     "letterRange": {
-      "type": "string"
+      "type": "string",
+      "pattern": "([^:,]+(:[^:,]+)?)(, ?([^:,]+(:[^:,]+)?))*",
+      "description": "Inclusive ranges denoted by `start:stop`, separated by commas."
     },
     "letterRanges": {
+      "title": "Letter Ranges",
+      "x-interface": "Letter Ranges",
       "type": "object",
       "properties": {
         "i0": {
@@ -279,13 +332,8 @@
         }
       },
       "patternProperties": {
-        "prop:[a-z]+(>(v|var|variant):[a-z]+)?(>(l|lang|language):[a-z]+)?": {
-          "$ref": "#/$defs/letterRange",
-          "description": "Property value ranges."
-        },
-        "form(:[a-z]+)?": {
-          "$ref": "#/$defs/letterRange",
-          "description": "Form value ranges."
+        "^(form(:[a-z]+)?|prop:[a-z]+(>(v|var|variant):[a-z]+)?(>(l|lang|language):[a-z]+)?)$": {
+          "$ref": "#/$defs/letterRange"
         }
       },
       "unevaluatedProperties": false
@@ -296,242 +344,231 @@
       "description": "Default key to be used in the letters field of data entries.",
       "pattern": "^(i0|i1|form(:[a-z]+)?|prop:[a-z]+(>(v|var|variant):[a-z]+)?(>(l|lang|language):[a-z]+)?)$"
     },
-    "subset": {
-      "type": "object",
-      "properties": {
-        "properties": {
-          "type": "object",
-          "patternProperties": {
-            "^[a-z]+$": {
-              "type": "object",
-              "properties": {
-                "label": {"type": "string"},
-                "config": {
-                  "$ref": "#/$defs/quizAnswerConfig"
-                },
-                "active": {
-                  "type": "boolean",
-                  "default": false
-                }
-              },
-              "required": ["label", "config"],
-              "unevaluatedProperties": false
-            }
-          },
-          "unevaluatedProperties": false
-        },
-        "selector": {
-          "type": "object",
-          "oneOf": [
-            {
-              "properties": {
-                "block": {
-                  "$ref": "#/$defs/selectorBlock",
-                  "unevaluatedProperties": false
-                }
-              },
-              "not": {"required": ["blocks"]}
-            },
-            {
-              "properties": {
-                "blocks": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/selectorBlock",
-                    "properties": {
-                      "letters": {
-                        "oneOf": [
-                          {"$ref": "#/$defs/letterRanges"},
-                          {"$ref": "#/$defs/letterRange"}
-                        ],
-                        "description": "Python-like ranges or \"rest\" (default)."
-                      }
-                    },
-                    "unevaluatedProperties": false,
-                    "required": ["letters"]
-                  }
-                }
-              },
-              "required": ["blocks"]
-            }
-          ],
-          "properties": {
-            "font": {"$ref": "#/$defs/fontRef"},
-            "label": {
-              "type": "object",
-              "description": "Settings for the label underneath letters in the selector. If not set, these won't appear.",
-              "properties": {
-                "property": {
-                  "type": "string",
-                  "description": "Which property to label the items with."
-                },
-                "splitFirst": {
-                  "type": "boolean",
-                  "description": "If true, only shows the first value of a list property.",
-                  "default": true
-                }
-              },
-              "required": ["property"]
-            },
-            "style": {"$ref": "#/$defs/blockStyle"},
-            "defaultActive": {"type": "string", "pattern": "^(all|none|block\\d+)$"},
-            "defaultLetterKey":  { "$ref": "#/$defs/letterKey" }
-          },
-          "unevaluatedProperties": false
-        },
-        "forms": {
-          "type": "object",
-          "properties": {
-            "data": {
-              "type": "object",
-              "patternProperties": {
-                "^[a-z]+$": {
-                  "anyOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "combine": {
-                          "type": "array",
-                          "items": {"type": "string"}
-                        }
-                      },
-                      "oneOf": [
-                        {
-                          "properties": {
-                            "label": {"type": "string"},
-                            "active": {
-                              "type": "boolean",
-                              "default": true
-                            }
-                          },
-                          "required": ["label"]
-                        },
-                        {
-                          "properties": {
-                            "groupWith": {
-                              "type": "string",
-                              "description": "If set, this form will not appear in the settings, but will follow the setting of the given key."
-                            }
-                          },
-                          "required": ["groupWith"]
-                        }
-                      ],
-                      "unevaluatedProperties": false
-                    },
-                    {"type": "string"}
-                  ],
-                  "description": "A form of letter, e.g. lower- or uppercase."
-                }
-              }
-            },
-            "label": {
-              "type": "string",
-              "description": "Label of the forms setting. Default \"Forms\".",
-              "default": "Forms"
-            },
-            "exclusive": {
-              "type": "boolean",
-              "description": "If true, you can only select one form to play at a time.",
-              "default": false
-            }
-          },
-          "required": ["data"],
-          "unevaluatedProperties": false
-        },
-        "items": {
-          "type": "object",
-          "properties": {
-            "symbolType": {
-              "enum": ["string"]
-            },
-            "properties": {
-              "type": "array",
-              "description": "Keys to assign the property entries of data rows to. RegExp-ish pattern: `PROPERTY(>(v|var|variant):VARIANT)?(>(l|lang|language):LANGUAGE)?`",
-              "items": {
-                "type": "string",
-                "pattern": "^[a-z]+(>(v|var|variant):[a-z]+(,[a-z]+)*)?(>(l|lang|language):[a-z]+(,[a-z]+)*)?$"
-              }
-            },
-            "data": {
-              "oneOf": [
-                {"$ref": "#/$defs/component"},
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "array",
-                    "prefixItems": [
-                      {
-                        "oneOf": [
-                          {"type": ["string", "null"]},
-                          {
-                            "type": "array",
-                            "items": {"type": ["string", "array", "null"]}
-                          }
-                        ]
-                      },
-                      {
-                        "oneOf": [
-                          {"type": ["string", "number"]},
-                          {
-                            "type": "array",
-                            "items": {"type": ["string", "number"]}
-                          }
-                        ]
-                      }
-                    ],
-                    "items": false
-                  }
-                }
-              ],
-              "description": "Array with [[...forms], [...properties]] entries matching the template. If first element is a string, it will be split into individual characters for forms. Use a single-item array if this isn't wanted."
-            }
-          },
-          "required": ["properties", "data"],
-          "unevaluatedProperties": false
-        }
-      },
-      "required": ["properties", "selector", "items"]
-    },
     "component": {
       "type": "object",
+      "title": "Component",
+      "description": "Reference component from a file in the components directory, that will be substituted in.",
       "properties": {
         "$component": {
-          "type": "string"
+          "type": "string",
+          "title": "Path To Component",
+          "pattern": "\\w+(/\\w+)*",
+          "description": "Path from components directory, if reached a file (without the extension .json), will treat the rest of the path as keys in the json file."
         }
       },
       "additionalProperties": false,
       "required": ["$component"]
+    },
+    "combineTemplates": {
+      "type": "array",
+      "x-interface": "Combine Templates",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "array",
+            "items": {
+              "type": ["string", "null"]
+            }
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "items": false,
+        "x-arrayAdd": false,
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "tsType": "[(string | null)[], string][]"
+    },
+    "regExpFlags": {
+      "type": "string",
+      "default": "u",
+      "pattern": "^[dgimsuvy]*$"
     }
   },
-  "title": "Kadmos Dataset",
   "type": "object",
+  "x-format": "nav-vertical-3",
+  "x-interface": "Kadmos Dataset",
+  "title": "Kadmos Dataset: {{ value.metadata.name }}",
+  "x-objectAdd": false,
+  "x-enablePropertiesToggle": true,
   "properties": {
-    "key": {
-      "type": "string",
-      "description": "Unique key for this script dataset. Preferably from the <a href=\"https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry\">IANA Language Subtag Registry</a>."
-    },
-    "name": {
-      "type": "string",
-      "description": "Name of the dataset"
-    },
-    "letterConfig": {
+    "metadata": {
       "type": "object",
+      "x-interface": "Metadata",
+      "title": "Metadata",
+      "x-format": "grid",
       "properties": {
-        "type": {
+        "key": {
           "type": "string",
-          "default": "string",
-          "description": "Type of letter, use 'string', 'braille' or 'svg'."
+          "title": "Key",
+          "description": "Unique key for this script dataset. Preferably from the <a href=\"https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry\">IANA Language Subtag Registry</a>."
+        },
+        "name": {
+          "type": "string",
+          "title": "Name",
+          "description": "Name of the dataset"
+        },
+        "description": {
+          "type": "string",
+          "title": "Description",
+          "x-grid": {
+            "columns": 12
+          },
+          "x-format": "textarea"
+        },
+        "lang": {
+          "type": "string",
+          "title": "HTML lang attribute",
+          "description": "cf. https://en.wikipedia.org/wiki/IETF_language_tag"
+        },
+        "dir": {
+          "type": "string",
+          "enum": ["ltr", "rtl"],
+          "title": "Direction",
+          "x-enumTitles": [
+            "Left to right",
+            "Right to left"
+          ],
+          "default": "ltr",
+          "description": "Direction of the script: ltr for left-to-right (default) or rtl for right-to-left."
+        },
+        "gameHeading": {
+          "type": "object",
+          "title": "Game Heading",
+          "x-interface": "Game Heading Config",
+          "description": "Transliteration of 'Kadmos' using the dataset's script",
+          "x-enableCollapseToggle": true,
+          "oneOf": [
+            {
+              "properties": {
+                "type": {"const": "string"},
+                "string": {
+                  "type": "string",
+                  "default": "Kadmos"
+                },
+                "font": {
+                  "$ref": "#/$defs/fontRef"
+                }
+              },
+              "required": ["string"],
+              "additionalProperties": false
+            },
+            {
+              "properties": {
+                "type": {"const": "custom"},
+                "key": {"type": "string"},
+                "data": {"type": "array"}
+              },
+              "additionalProperties": false,
+              "required": ["type", "key"]
+            }
+          ]
+        },
+        "terms": {
+          "type": "object",
+          "title": "Terms",
+          "x-interface": "Terms Config",
+          "x-enableCollapseToggle": true,
+          "description": "Specify what the equivalent of e.g. \"letter\" and \"letters\" in this font are called.",
+          "properties": {
+            "letter": {"type": "string", "default": "letter"},
+            "letters": {"type": "string", "description": "Uses the term for letter + 's' by default."}
+          },
+          "additionalProperties": false
         }
       },
-      "required": ["type"],
-      "anyOf": [
+      "required": ["key", "name"],
+      "additionalProperties": false
+    },
+    "letterConfig": {
+      "title": "Letter Config",
+      "x-interface": "Letter Config",
+      "oneOf": [
         {
+          "x-interface": "String Letter Config",
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "string"
+            },
+            "fonts": {
+              "type": "object",
+              "x-interface": "Fonts",
+              "description": "A registry of the fonts used by the dataset, with lowercase keys.",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "x-titleTemplate": "{{ value.family }}",
+                  "x-format": "pattern-nav",
+                  "patternProperties": {
+                    "^[a-z]+$": {
+                      "title": "{{ value.family }}",
+                      "x-interface": "Font Data",
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "description": "Matches the font family by default."
+                        },
+                        "family": {
+                          "type": "string",
+                          "description": "Font family name. E.g. \"Noto Sans\" or \"Noto Serif Hebrew\".",
+                          "default": "Noto Sans"
+                        },
+                        "default": {
+                          "type": "boolean",
+                          "title": "Use as default",
+                          "default": false
+                        },
+                        "params": {
+                          "$ref": "#/$defs/fontParams",
+                          "x-grid": {"columns": 12},
+                          "x-nColumns": 4
+                        }
+                      },
+                      "required": ["family"],
+                      "additionalProperties": false,
+                      "x-format": "grid",
+                      "x-nColumns": 3
+                    }
+                  },
+                  "unevaluatedProperties": false
+                },
+                "params": {
+                  "$ref": "#/$defs/fontParams",
+                  "description": "Params applied to all fonts.",
+                  "title": "Default params"
+                },
+                "manualUnicodes": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]+(-[0-9a-fA-F]+)?(,[0-9a-fA-F]+(-[0-9a-fA-F]+)?)*$",
+                  "description": "List of unicode characters manually to be included."
+                }
+              },
+              "required": ["data"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "fonts"],
+          "x-switcherTitle": "Unicode",
+          "additionalProperties": false
+        },
+        {
+          "x-interface": "SVG Letter Config",
+          "type": "object",
           "properties": {
             "type": {"const": "svg"},
             "template": {
               "oneOf": [
-                {"$ref": "#/$defs/component"},
                 {
+                  "$ref": "#/$defs/component",
+                  "title": "Component"
+                },
+                {
+                  "x-interface": "SVG Template",
                   "type": "object",
                   "properties": {
                     "string": {
@@ -549,124 +586,56 @@
                 }
               ]
             }
-          }
+          },
+          "required": ["type", "template"],
+          "x-switcherTitle": "SVG",
+          "additionalProperties": false
         },
         {
-          "properties": {
-            "type": {
-              "enum": ["braille", "string"]
-            }
-          }
-        }
-      ],
-      "unevaluatedProperties": false
-    },
-    "metadata": {
-      "type": "object",
-      "properties": {
-        "gameHeading": {
-          "anyOf": [
-            {
-              "type": "string",
-              "description": "Heading of the game. Equivalent to {\"string\": \"Heading\"}."
-            },
-            {"type": "object",
-              "properties": {
-                "string": {
-                  "type": "string",
-                  "description": "Heading of the game."
-                },
-                "font": {
-                  "$ref": "#/$defs/fontRef",
-                  "unevaluatedProperties": false
-                }
-              }
-            }
-          ]
-        },
-        "lang": {
-          "type": "string",
-          "description": "Value of the HTML lang attribute for letters of this script. Default \"en\"."
-        },
-        "dir": {
-          "enum": ["ltr", "rtl"],
-          "default": "ltr",
-          "description": "Direction of the script: ltr for left-to-right (default) or rtl for right-to-left."
-        },
-        "terms": {
+          "x-interface": "Braille Letter Config",
           "type": "object",
-          "description": "Specify what the equivalent of e.g. \"letter\" and \"letters\" in this font are called.",
           "properties": {
-            "letter": {"type": "string", "default": "letter"},
-            "letters": {"type": "string", "description": "Default: terms.letter + 's'"}
-          }
+            "type": {"const": "braille"}
+          },
+          "required": ["type"],
+          "x-switcherTitle": "Braille",
+          "additionalProperties": false
         }
-      },
-      "patternProperties": {
-        "^_.+$": {"type": "string"}
-      },
-      "required": ["gameHeading"],
-      "unevaluatedProperties": false
+      ]
     },
     "languages": {
       "type": "object",
+      "title": "Languages",
+      "x-interface": "Languages",
+      "description": "List of languages that you can play the game in.",
       "properties": {
         "keys": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string",
+            "title": "Key"
+          },
+          "uniqueItems": true,
           "description": "Language subtags. In items, use \"p:PROPERTY_SUBTAG\" (e.g. \"p:name_de\") as key to specify language-specific property values."
         },
         "default": {"type": "string"}
       },
       "required": ["keys"],
-      "unevaluatedProperties": false
-    },
-    "fonts": {
-      "type": "object",
-      "description": "A registry of the fonts used by the dataset, with lowercase keys.",
-      "properties": {
-        "data": {
-          "type": "object",
-          "patternProperties": {
-            "^[a-z]+$": {
-              "type": "object",
-              "properties": {
-                "family": {
-                  "type": "string",
-                  "description": "Font family name. E.g. \"Noto Sans\" or \"Noto Serif Hebrew\"."
-                },
-                "label": {
-                  "type": "string",
-                  "description": "Label of the Font in the game font settings. Default: family"
-                },
-                "default": {
-                  "type": "boolean",
-                  "default": false
-                },
-                "params": {"$ref": "#/$defs/fontParams"}
-              },
-              "required": ["family"],
-              "unevaluatedProperties": false
-            }
-          },
-          "unevaluatedProperties": false
-        },
-        "params": {
-          "$ref": "#/$defs/fontParams",
-          "description": "Params applied to all fonts."
-        }
-      },
-      "unevaluatedProperties": false
+      "additionalProperties": false
     },
     "variants": {
       "type": "object",
+      "title": "Variants",
+      "x-interface": "Variants Config",
       "properties": {
-        "defaultLetterKey": { "$ref": "#/$defs/letterKey" },
         "data": {
           "type": "object",
+          "x-format": "pattern-nav",
           "patternProperties": {
             "^[a-z]+$": {
               "type": "object",
+              "x-interface": "Variant Data",
+              "description": "A variant of the script, e.g. the Russian or Bulgarian variant of the Cyrillic script.",
               "properties": {
                 "label": {"type": "string"},
                 "lang": {
@@ -677,26 +646,23 @@
                   "type": "boolean",
                   "default": false
                 },
-                "fonts": {
+                "fontParams": {
                   "type": "object",
                   "description": "Modifying the dataset's fonts entries.",
+                  "x-format": "pattern-nav",
                   "patternProperties": {
-                    "^[a-z]+$": {"$ref": "#/$defs/fontRef"}
+                    "^[a-z]+$": {"$ref": "#/$defs/fontParams"}
                   }
-                },
-                "letters": {
-                  "oneOf": [
-                    {"$ref": "#/$defs/letterRanges"},
-                    {"$ref": "#/$defs/letterRange"}
-                  ]
                 }
               },
-              "description": "A variant of the script, e.g. the Russian or Bulgarian variant of the Cyrillic script."
+              "additionalProperties": false,
+              "required": ["label"]
             }
           }
         },
         "groups": {
           "type": "object",
+          "x-format": "pattern-nav",
           "patternProperties": {
             "^[a-z]+$": {
               "type": "object",
@@ -707,7 +673,8 @@
                   "items": {"type": "string"},
                   "description": "List of keys from the variants.data field."
                 }
-              }
+              },
+              "required": ["label", "keys"]
             }
           }
         },
@@ -716,7 +683,12 @@
           "properties": {
             "type": {
               "enum": ["select", "buttonGroup"],
-              "default": "select"
+              "default": "select",
+              "x-enumTitles": ["Selectbox", "Button Group"]
+            },
+            "label": {
+              "type": "string",
+              "default": "Variant"
             }
           }
         },
@@ -724,159 +696,325 @@
           "type": "boolean",
           "description": "If true, the lang attribute of a variant will be set to its key unless already specified.",
           "default": false
+        },
+        "default": {
+          "type": "string",
+          "title": "Default variant key"
         }
       },
       "required": ["data"],
-      "unevaluatedProperties": false
+      "additionalProperties": false
     },
     "game": {
       "type": "object",
+      "x-interface": "Game Config",
+      "title": "Game",
       "properties": {
-        "defaultWeight": {
-          "$ref": "#/$defs/fontWeight",
-          "default": 500
-        }
+        "defaultWeight": {"$ref": "#/$defs/fontWeight"}
       }
-    }
-  },
-  "required": ["key", "name", "metadata"],
-  "if": {
-    "anyOf": [
-      {
-        "properties": {
-          "letterConfig": {
-            "properties": {
-              "type": {"const": "string"}
-            }
-          }
-        },
-        "required": ["letterConfig"]
-      },
-      {
-        "not": {"required": ["letterConfig"]}
-      }
-    ]
-  },
-  "then": {
-    "required": ["fonts"]
-  },
-  "oneOf": [
-    {
-      "properties": {
-        "subsets": {
+    },
+    "subsets": {
+      "type": "object",
+      "title": "Subsets",
+      "x-interface": "Subsets",
+      "x-format": "pattern-nav",
+      "patternProperties": {
+        "^[a-z]+$": {
+          "x-interface": "Subset",
+          "title": "Subset",
           "type": "object",
-          "patternProperties": {
-            "^[a-z]+$": {
-              "$ref": "#/$defs/subset",
-              "properties": {
-                "variants": {
+          "x-format": "categories-vertical",
+          "properties": {
+            "label": {
+              "type": "string",
+              "title": "Label",
+              "default": "Letters"
+            },
+            "properties": {
+              "title": "Properties",
+              "x-interface": "Subset Properties",
+              "type": "object",
+              "x-category": "Properties",
+              "x-format": "pattern-nav",
+              "patternProperties": {
+                "^[a-z]+$": {
+                  "x-interface": "Subset Property Params",
                   "type": "object",
                   "properties": {
-                    "letters": {
-                      "type": "object",
-                      "description": "Set the letter ranges for the variants defined globally.",
-                      "patternProperties": {
-                        "^[a-z]+$": {"$ref": "#/$defs/letterRanges"}
-                      },
-                      "unevaluatedProperties": false
+                    "label": {"type": "string"},
+                    "config": {
+                      "$ref": "#/$defs/quizAnswerConfig"
                     },
-                    "defaultLetterKey": {
-                      "type": "string"
+                    "active": {
+                      "type": "boolean",
+                      "default": false
+                    }
+                  },
+                  "required": ["label", "config"],
+                  "additionalProperties": false
+                }
+              },
+              "unevaluatedProperties": false
+            },
+            "selector": {
+              "type": "object",
+              "title": "Selector",
+              "x-interface": "Selector Config",
+              "x-category": "Selector",
+              "properties": {
+                "blocks": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/selectorBlock",
+                    "properties": {
+                      "letters": {"$ref": "#/$defs/letterRanges"}
+                    },
+                    "unevaluatedProperties": false,
+                    "x-objectAdd": false
+                  }
+                },
+                "font": {"$ref": "#/$defs/fontRef"},
+                "label": {
+                  "type": "object",
+                  "description": "Settings for the label underneath letters in the selector. If not set, these won't appear.",
+                  "properties": {
+                    "property": {
+                      "type": "string",
+                      "description": "Which property to label the items with."
+                    },
+                    "splitFirst": {
+                      "type": "boolean",
+                      "description": "If true, only shows the first value of a list property.",
+                      "default": true
+                    }
+                  },
+                  "required": ["property"]
+                },
+                "style": {"$ref": "#/$defs/blockStyle"},
+                "defaultActive": {
+                  "type": "string",
+                  "pattern": "^(all|none|block\\d+)$",
+                  "default": "all",
+                  "description": "'all', 'none' or 'block{INDEX}'."
+                }
+              },
+              "additionalProperties": false
+            },
+            "forms": {
+              "type": "object",
+              "title": "Forms",
+              "x-interface": "Forms Config",
+              "x-category": "Forms",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "description": "A form of letter, e.g. lower- or uppercase.",
+                  "x-format": "pattern-nav",
+                  "patternProperties": {
+                    "^[a-z]+$": {
+                      "type": "object",
+                      "x-interface": "Form Config",
+                      "properties": {
+                        "combine": {
+                          "type": "array",
+                          "items": {"type": "string"},
+                          "x-editJsonData": true
+                        },
+                        "label": {"type": "string"},
+                        "active": {
+                          "type": "boolean",
+                          "title": "Active",
+                          "default": true
+                        },
+                        "groupWith": {
+                          "type": "string",
+                          "title": "Group With Key",
+                          "description": "If set, this form will not appear in the settings, but will follow the setting of the given key."
+                        }
+                      },
+                      "required": ["label"],
+                      "unevaluatedProperties": false,
+                      "x-objectAdd": false
                     }
                   }
                 },
                 "label": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Label of the forms setting. Default \"Forms\".",
+                  "default": "Forms"
+                },
+                "exclusive": {
+                  "type": "boolean",
+                  "description": "If true, you can only select one form to play at a time.",
+                  "default": false
                 }
               },
-              "required": ["label"]
-            }
-          },
-          "unevaluatedProperties": false
-        },
-        "combine": {
-          "type": "object",
-          "properties": {
-            "methods": {
+              "required": ["data"],
+              "additionalProperties": false
+            },
+            "items": {
               "type": "object",
-              "patternProperties": {
-                "^[a-z]+$": {
-                  "type": "object",
-                  "properties": {
-                    "label": {
-                      "type": "string"
+              "x-interface": "Subset Items",
+              "title": "Items",
+              "x-category": "Items",
+              "properties": {
+                "properties": {
+                  "type": "array",
+                  "description": "Keys to assign the property entries of data rows to. RegExp-ish pattern: `PROPERTY(>(v|var|variant):VARIANT)?(>(l|lang|language):LANGUAGE)?`",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z]+(>(v|var|variant):[a-z]+(,[a-z]+)*)?(>(l|lang|language):[a-z]+(,[a-z]+)*)?$"
+                  },
+                  "x-editJsonData": true
+                },
+                "data": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/component",
+                      "title": "Component"
                     },
-                    "subsets": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "letterConfig": {
-                      "type": "array",
-                      "items": {
-                        "oneOf": [
-                          {"type": "null"},
-                          {
-                            "type": "object",
-                            "properties": {
-                              "form": {
-                                "type": "string"
-                              }
-                            },
-                            "unevaluatedProperties": false
-                          }
-                        ]
-                      }
-                    },
-                    "properties": {
-                      "type": "object",
-                      "patternProperties": {
-                        "^[a-z]+$": {
-                          "type": "object",
-                          "properties": {
-                            "sources": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "unevaluatedProperties": false
-                        }
-                      },
-                      "unevaluatedProperties": false
-                    },
-                    "templates": {
+                    {
+                      "x-interface": "Items Data",
+                      "title": "Data",
                       "type": "array",
                       "items": {
                         "type": "array",
                         "prefixItems": [
                           {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
+                            "type": "array"
                           },
                           {
-                            "type": "string"
+                            "type": "array",
+                            "items": {"type": "string"}
                           }
                         ],
-                        "unevaluatedItems": false
-                      }
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "tsType": "[unknown[], string[]]"
+                      },
+                      "x-editJsonData": true
                     }
+                  ],
+                  "description": "Array with [[...forms], [...properties]] entries matching the template. If first element is a string, it will be split into individual characters for forms. Use a single-item array if this isn't wanted."
+                }
+              },
+              "required": ["properties", "data"],
+              "additionalProperties": false
+            },
+            "variants": {
+              "type": "object",
+              "x-interface": "Subset Variants",
+              "title": "Variants",
+              "x-category": "Variants",
+              "properties": {
+                "letters": {
+                  "type": "object",
+                  "x-interface": "Variant Letter Ranges",
+                  "title": "Variant Letter Ranges",
+                  "description": "Set the letter ranges for the variants defined globally.",
+                  "x-format": "pattern-nav",
+                  "patternProperties": {
+                    "^[a-z]+$": {"$ref": "#/$defs/letterRanges"}
                   },
                   "unevaluatedProperties": false
                 }
               },
-              "unevaluatedProperties": false
+              "additionalProperties": false,
+              "required": ["letters"]
             }
-          }
+          },
+          "required": ["label", "properties", "selector", "items"],
+          "additionalProperties": false
         }
       },
-      "required": ["subsets"]
+      "unevaluatedProperties": false,
+      "xx-defaultKey": "letters"
     },
-    {"$ref": "#/$defs/subset"}
-  ],
-  "unevaluatedProperties": false
+    "combine": {
+      "type": "object",
+      "x-interface": "Combine Config",
+      "title": "Combine",
+      "properties": {
+        "methods": {
+          "type": "object",
+          "x-format": "pattern-nav",
+          "patternProperties": {
+            "^[a-z]+$": {
+              "type": "object",
+              "x-interface": "Combine Method",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "subsets": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "letterConfig": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {"type": "null"},
+                      {
+                        "type": "object",
+                        "properties": {
+                          "form": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["form"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "properties": {
+                  "type": "object",
+                  "x-format": "pattern-nav",
+                  "patternProperties": {
+                    "^[a-z]+$": {
+                      "type": "object",
+                      "x-interface": "Combine Property Config",
+                      "properties": {
+                        "sources": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ]
+                        },
+                        "templates": {"$ref": "#/$defs/combineTemplates"},
+                        "regExpFlags": {"$ref": "#/$defs/regExpFlags"}
+                      },
+                      "additionalProperties": false,
+                      "required": ["sources"]
+                    }
+                  },
+                  "unevaluatedProperties": false
+                },
+                "templates": {"$ref": "#/$defs/combineTemplates"},
+                "regExpFlags": {"$ref": "#/$defs/regExpFlags"}
+              },
+              "required": ["label", "subsets"],
+              "x-required": ["templates"],
+              "additionalProperties": false
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      },
+      "required": ["methods"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["metadata", "letterConfig", "subsets"],
+  "additionalProperties": false
 }

@@ -27,7 +27,7 @@ def main():
         width = round(path.width(padding))
         d_string = path.d(digits_pow=digits_pow)
 
-        items.append([[[width, d_string]], letter])
+        items.append([[[width, d_string]], [letter]])
 
     template.write_items_to_dir(os.path.join(cwd, "svg"), items)
 

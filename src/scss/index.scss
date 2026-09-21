@@ -453,7 +453,7 @@ input[type="range"] {
   }
 }
 
-#live-settings {
+#card-settings-ribbon {
   position: relative;
   margin-block: .4rem;
   --clr-surface: var(--clr-surface-standout);
@@ -467,7 +467,7 @@ input[type="range"] {
   }
 }
 
-#font-settings-button + label {
+#card-settings-button + label {
   padding-block: .25em;
 
   transition: background $shortTransition;
