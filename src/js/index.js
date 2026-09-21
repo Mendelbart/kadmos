@@ -1,5 +1,6 @@
 import {DOMUtils} from "./utils";
 import {setup} from "./context.js";
+import {registerServiceWorker} from "./utils/dom.ts";
 
 // --------------- GAME SETUP -----------------
 (function () {
@@ -8,4 +9,6 @@ import {setup} from "./context.js";
     });
 
     setup();
+
+    registerServiceWorker("/kadmos/js/sw.js");
 })();
