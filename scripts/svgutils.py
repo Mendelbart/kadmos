@@ -45,8 +45,8 @@ class SVGTemplate:
         file.write(self.instance(values))
 
     def write_items_to_dir(self, dirname, items):
-        for forms, name in items:
-            filename = os.path.join(dirname, name + ".svg")
+        for forms, props in items:
+            filename = os.path.join(dirname, props[0] + ".svg")
             with open(filename, "w") as f:
                 self.write_to_file(f, forms[0])
 

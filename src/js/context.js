@@ -1,11 +1,17 @@
 import {SettingCollection, Slider, ButtonGroup, Switch} from "./settings";
 import Game from "./game/Game";
-import {Dataset, DEFAULT_DATASET, TERMS} from "./dataset/Dataset.js";
+import {Dataset, DEFAULT_DATASET, TERMS} from "./dataset/Dataset.ts";
 import DATASETS_METADATA from '../json/datasets_meta.json';
 import {DOMUtils, ObjectUtils} from "./utils";
 import {encodeBase64BoolArray, decodeBase64BoolArray} from "./utils/base64";
-import DatasetMediator from "./dataset/DatasetMediator";
+import DatasetMediator from "./dataset/DatasetMediator.ts";
+import {createButtonGroup} from "./settings/ButtonGroup";
+import Pages from "./utils/classes/Pages.ts";
+import {grabNode} from "./utils/dom.ts";
 
+
+
+const GAME_PAGES = new Pages(grabNode(document, "div", "#game-settings-pages"));
 
 /** @type {Game} */
 let GAME;
@@ -15,7 +21,11 @@ let DATASET;
 /** @type {DatasetMediator} */
 let DSM;
 
-const GENERIC_GAME_SETTINGS = Game.genericSettings();
+
+const GENERIC_GAME_SETTINGS = Game.genericSettings(JSON.parse(localStorage.getItem("game_generic")));
+GENERIC_GAME_SETTINGS.observers.push(values => {
+    localStorage.setItem("game_generic", JSON.stringify(values));
+});
 
 /** @type {SettingCollection} */
 let PAGE_SETTINGS;
@@ -87,7 +97,7 @@ function setupDatasetSelect() {
  */
 function setPlaying(playing) {
     if (!playing) {
-        DOMUtils.showPage(document.getElementById('game-filters'));
+        GAME_PAGES.open(0);
         GAME?.cleanup();
     }
 
@@ -108,12 +118,11 @@ function setPlaying(playing) {
 const PageSettingCreators = {
     accentHue: getAccentHueSetting,
     colorMode: getPageLightDarkModeSetting,
-    keepKeyboardOpen: getKeepKeyboardOpenSetting,
     useViewTransitions: getViewTransitionSetting
 }
 
 function setupPageSettings() {
-    PAGE_SETTINGS = SettingCollection.createFrom(ObjectUtils.map(PageSettingCreators,
+    PAGE_SETTINGS = new SettingCollection(ObjectUtils.map(PageSettingCreators,
         (creator, key) => creator(window.localStorage.getItem(key))
     ));
 
@@ -161,7 +170,7 @@ function setAccentHue(hue) {
 function getPageLightDarkModeSetting(mode = "default") {
     setLightDarkMode(mode);
 
-    const colorModeSetting = ButtonGroup.from(
+    const colorModeSetting = createButtonGroup(
         {
             default: "Default",
             dark: "Dark",
@@ -169,7 +178,7 @@ function getPageLightDarkModeSetting(mode = "default") {
         },
         {
             label: "Color Theme",
-            exclusive: true,
+            type: "radio",
             checked: mode
         }
     );
@@ -195,21 +204,6 @@ function setLightDarkMode(mode) {
     DOMUtils.classIfElse(mode === "dark", document.documentElement, "dark-mode", "light-mode");
 }
 
-const SwitchTrueValue = "1";
-const SwitchFalseValue = "0";
-/**
- * @param {string} [value]
- * @returns Switch
- */
-function getKeepKeyboardOpenSetting(value) {
-    const sw = getSwitch("Keep Keyboard Open", value ?? window.isMobile.toString());
-    sw.observers.push((value) => {
-        if (GAME) GAME.keepKeyboardOpen = value === SwitchTrueValue;
-    });
-
-    return sw;
-}
-
 /**
  * @param {string} value
  * @returns Switch
@@ -224,14 +218,15 @@ function getViewTransitionSetting(value) {
     return sw;
 }
 
+const SwitchTrueValue = "1";
+const SwitchFalseValue = "0";
 /**
  * @param {string} label
- * @param {string} [value]
- * @returns Switch
+ * @param {SwitchTrueValue | SwitchFalseValue} [value]
+ * @returns {Switch<SwitchTrueValue | SwitchFalseValue>}
  */
 function getSwitch(label, value) {
-    const sw = Switch.create(label);
-    sw.setValues(SwitchFalseValue, SwitchTrueValue);
+    const sw = Switch.create(label, {boolValues: {true: SwitchTrueValue, false: SwitchFalseValue}});
     sw.value = value;
     return sw;
 }
@@ -251,16 +246,16 @@ function selectDataset(dataset) {
     return DATASET.loadFonts().then(() => {
         setupTerms();
 
-        DOMUtils.showPage(document.getElementById('game-filters'));
+        GAME_PAGES.open(0);
 
         setupDSM();
         checkPagesNextButton();
-        setupGameHeading(DSM.settings.selector.getDefault("variant"));
+        setupGameHeading(DSM.settings.selector.getValue("variant"));
     }).catch(err => console.error(err));
 }
 
 function updateDocumentTitle() {
-    document.title = DATASET ? `${DATASET.name} - Kadmos` : "Kadmos";
+    document.title = DATASET ? `${DATASET.metadata.name} - Kadmos` : "Kadmos";
 }
 
 function setupTerms() {
@@ -286,11 +281,9 @@ function setupDSM() {
         document.getElementById('dataset-filter-settings').prepend(DSM.settings.subset.node);
     }
 
-    if (DSM.settings.selector.has("variant")) {
-        DSM.settings.selector.addObserverTo("variant", variant => {
-            setupGameHeading(variant);
-        });
-    }
+    DSM.settings.selector.get("variant").observers.push(variant => {
+        setupGameHeading(variant);
+    });
 }
 
 function setupGameHeading(variant) {
@@ -307,12 +300,7 @@ function checkPagesNextButton() {
 /***************************************** GAME *******************************/
 function startGame() {
     GAME?.cleanup();
-    GAME = DSM.getGame();
-
-    const seed = GENERIC_GAME_SETTINGS.getValue("seed");
-    if (seed) GAME.seed(seed);
-
-    GAME.keepKeyboardOpen = PAGE_SETTINGS.getValue("keepKeyboardOpen") === SwitchTrueValue;
+    GAME = DSM.getGame(GENERIC_GAME_SETTINGS.getValues());
     GAME.onFinish.push(() => setPlaying(false));
 
     setPlaying(true);

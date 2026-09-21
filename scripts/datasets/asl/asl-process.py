@@ -39,7 +39,7 @@ def main():
 
         d_string = path.d(digits_pow=digits_pow)
 
-        items.append([[[width, d_string]], letter])
+        items.append([[[width, d_string]], [letter]])
 
     items.sort(key=lambda x: x[1])
 

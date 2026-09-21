@@ -1,77 +1,86 @@
 {
-  "key": "greek",
-  "name": "Greek",
   "metadata": {
+    "key": "greek",
+    "name": "Greek",
     "gameHeading": {"string": "Κάδμος", "font": {"key": "sans"}},
     "lang": "el"
+  },
+  "letterConfig": {
+    "type": "string",
+    "fonts": {
+      "data": {
+        "serif": {"family": "Noto Serif", "label": "Serif", "default": true},
+        "sans": {"family": "Noto Sans", "label": "Sans"}
+      }
+    }
   },
   "languages": {
     "keys": ["en", "de"],
     "default": "en"
   },
-  "fonts": {
-    "data": {
-      "serif": {"family": "Noto Serif", "label": "Serif", "default": true},
-      "sans": {"family": "Noto Sans", "label": "Sans"}
-    }
-  },
-  "properties": {
-    "name": {
-      "label": "Name",
-      "config": {
-        "type": "list",
-        "items": {
-          "type": "string",
-          "properties": {
-            "maxDist": 1
-          }
+  "subsets": {
+    "letters": {
+      "label": "Letters",
+      "properties": {
+        "name": {
+          "label": "Name",
+          "config": {
+            "type": "list",
+            "items": {
+              "type": "string",
+              "properties": {
+                "maxDist": 1
+              }
+            }
+          },
+          "active": true
         }
       },
-      "active": true
-    }
-  },
-  "selector": {
-    "font": "serif",
-    "label": {"property": "name"},
-    "style": {"buttonWidth": "5ch"}
-  },
-  "forms": {
-    "data": {
-      "upper": {
-        "label": "Uppercase",
-        "active": true
+      "selector": {
+        "font": {"key": "serif"},
+        "label": {"property": "name"},
+        "style": {"buttonWidth": "5ch"}
       },
-      "lower": "Lowercase",
-      "final": {"groupWith": "lower"}
+      "forms": {
+        "label": "Forms",
+        "data": {
+          "upper": {
+            "label": "Uppercase",
+            "active": true
+          },
+          "lower": {"label": "Lowercase"},
+          "final": {"label": "Final", "groupWith": "lower"}
+        }
+      },
+      "items": {
+        "properties": ["name", "name>lang:de"],
+        "data": [
+          [["Α", "α"], ["alpha", "Alpha"]],
+          [["Β", "β"], ["beta", "Beta"]],
+          [["Γ", "γ"], ["gamma", "Gamma"]],
+          [["Δ", "δ"], ["delta", "Delta"]],
+          [["Ε", "ε"], ["epsilon", "Epsilon"]],
+          [["Ζ", "ζ"], ["zeta", "Zeta"]],
+          [["Η", "η"], ["eta", "Eta"]],
+          [["Θ", "θ"], ["theta", "Theta"]],
+          [["Ι", "ι"], ["iota", "Iota/Jota"]],
+          [["Κ", "κ"], ["kappa", "Kappa"]],
+          [["Λ", "λ"], ["lambda", "Lambda"]],
+          [["Μ", "μ"], ["mu", "My/Mü"]],
+          [["Ν", "ν"], ["nu", "Ny/Nü"]],
+          [["Ξ", "ξ"], ["xi", "Xi"]],
+          [["Ο", "ο"], ["omicron", "Omikron"]],
+          [["Π", "π"], ["pi", "Pi"]],
+          [["Ρ", "ρ"], ["rho", "Rho"]],
+          [["Σ", "σ", "ς"], ["sigma", "Sigma"]],
+          [["Τ", "τ"], ["tau", "Tau"]],
+          [["Υ", "υ"], ["upsilon", "Ypsilon"]],
+          [["Φ", "φ"], ["phi", "Phi"]],
+          [["Χ", "χ"], ["chi", "Chi"]],
+          [["Ψ", "ψ"], ["psi", "Psi"]],
+          [["Ω", "ω"], ["omega", "Omega"]]
+        ]
+      }
     }
-  },
-  "items": {
-    "properties": ["name", "name>lang:de"],
-    "data": [
-      ["Αα", ["alpha", "Alpha"]],
-      ["Ββ", ["beta", "Beta"]],
-      ["Γγ", ["gamma", "Gamma"]],
-      ["Δδ", ["delta", "Delta"]],
-      ["Εε", ["epsilon", "Epsilon"]],
-      ["Zζ", ["zeta", "Zeta"]],
-      ["Ηη", ["eta", "Eta"]],
-      ["Θθ", ["theta", "Theta"]],
-      ["Ιι", ["iota", "Iota/Jota"]],
-      ["Κκ", ["kappa", "Kappa"]],
-      ["Λλ", ["lambda", "Lambda"]],
-      ["Μμ", ["mu", "My/Mü"]],
-      ["Νν", ["nu", "Ny/Nü"]],
-      ["Ξξ", ["xi", "Xi"]],
-      ["Οο", ["omicron", "Omikron"]],
-      ["Ππ", ["pi", "Pi"]],
-      ["Ρρ", ["rho", "Rho"]],
-      ["Σσς", ["sigma", "Sigma"]],
-      ["Ττ", ["tau", "Tau"]],
-      ["Υυ", ["upsilon", "Ypsilon"]],
-      ["Φφ", ["phi", "Phi"]],
-      ["Χχ", ["chi", "Chi"]],
-      ["Ψψ", ["psi", "Psi"]],
-      ["Ωω", ["omega", "Omega"]]
-    ]
   }
 }

@@ -41,9 +41,9 @@
       <option name="workingDir" value="$PROJECT_DIR$" />
       <envs />
     </TaskOptions>
-    <TaskOptions isEnabled="false">
-      <option name="arguments" value="-u -i src/json/datasets/$FileName$ -o dist/json/datasets/$FileName$" />
-      <option name="checkSyntaxErrors" value="false" />
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="-u -i src/json/$FileName$ -o dist/json/$FileName$" />
+      <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ERROR" />
       <option name="fileExtension" value="json" />
@@ -56,7 +56,7 @@
       <option name="outputFromStdout" value="false" />
       <option name="program" value="jj" />
       <option name="runOnExternalChanges" value="true" />
-      <option name="scopeName" value="datasets" />
+      <option name="scopeName" value="schema" />
       <option name="trackOnlyRoot" value="false" />
       <option name="workingDir" value="$PROJECT_DIR$" />
       <envs />
@@ -82,14 +82,14 @@
       <envs />
     </TaskOptions>
     <TaskOptions isEnabled="true">
-      <option name="arguments" value="src/index.html -o dist/index.html --keep-closing-tags --keep-html-and-head-opening-tags --keep-input-type-text-attr" />
+      <option name="arguments" value="$FilePath$ -o /home/felix/Programming/kadmos/dist/$FileDirPathFromParent(src)$$FileName$ --keep-closing-tags --keep-html-and-head-opening-tags --keep-input-type-text-attr" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ERROR" />
       <option name="fileExtension" value="html" />
       <option name="immediateSync" value="true" />
       <option name="name" value="Minify HTML" />
-      <option name="output" value="src/index.html" />
+      <option name="output" value="" />
       <option name="outputFilters">
         <array />
       </option>
@@ -139,6 +139,46 @@
       <option name="scopeName" value="datasets" />
       <option name="trackOnlyRoot" value="false" />
       <option name="workingDir" value="$PROJECT_DIR$" />
+      <envs />
+    </TaskOptions>
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="--bundle src/jedison/index.js --target=es2020 --outdir=dist/jedison --minify --sourcemap" />
+      <option name="checkSyntaxErrors" value="true" />
+      <option name="description" />
+      <option name="exitCodeBehavior" value="ERROR" />
+      <option name="fileExtension" value="*" />
+      <option name="immediateSync" value="true" />
+      <option name="name" value="esbuild jedison" />
+      <option name="output" value="dist/jedison/index.js:dist/jedison/index.js.map" />
+      <option name="outputFilters">
+        <array />
+      </option>
+      <option name="outputFromStdout" value="false" />
+      <option name="program" value="esbuild" />
+      <option name="runOnExternalChanges" value="true" />
+      <option name="scopeName" value="jedison" />
+      <option name="trackOnlyRoot" value="false" />
+      <option name="workingDir" value="$PROJECT_DIR$" />
+      <envs />
+    </TaskOptions>
+    <TaskOptions isEnabled="true">
+      <option name="arguments" value="schema_to_ts.js" />
+      <option name="checkSyntaxErrors" value="true" />
+      <option name="description" />
+      <option name="exitCodeBehavior" value="ERROR" />
+      <option name="fileExtension" value="json" />
+      <option name="immediateSync" value="true" />
+      <option name="name" value="Schema to TS type" />
+      <option name="output" value="$PROJECT_DIR$/src/json/dataset.schema.d.ts" />
+      <option name="outputFilters">
+        <array />
+      </option>
+      <option name="outputFromStdout" value="false" />
+      <option name="program" value="$USER_HOME$/.nvm/versions/node/v26.2.0/bin/node" />
+      <option name="runOnExternalChanges" value="true" />
+      <option name="scopeName" value="schema" />
+      <option name="trackOnlyRoot" value="false" />
+      <option name="workingDir" value="$PROJECT_DIR$/src/json" />
       <envs />
     </TaskOptions>
   </component>
