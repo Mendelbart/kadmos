@@ -10,5 +10,5 @@ import {registerServiceWorker} from "./utils/dom.ts";
 
     setup();
 
-    registerServiceWorker("/kadmos/js/sw.js");
+    registerServiceWorker("/kadmos/sw.js");
 })();
