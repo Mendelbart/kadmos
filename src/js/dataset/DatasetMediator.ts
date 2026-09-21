@@ -59,7 +59,7 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
      * @param [settingsCache]
      * @param [settingsValues]
      */
-    constructor(dataset: Dataset<K>, settingsCache: DatasetCache | null, settingsValues: DatasetSettingsValues = {}) {
+    constructor(dataset: Dataset<K>, settingsCache?: DatasetCache | null, settingsValues: DatasetSettingsValues = {}) {
         super();
         this.dataset = dataset;
 
@@ -105,7 +105,7 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         this.setupObservers();
     }
 
-    updateCacheToValues(cache: DatasetCache | null, values: DatasetSettingsValues, subsetKey?: string): DatasetCache {
+    updateCacheToValues(cache?: DatasetCache | null, values: DatasetSettingsValues = {}, subsetKey?: string): DatasetCache {
         subsetKey ??= this.subset.key;
         cache ??= {};
         const subCache = cache[subsetKey] ??= {};

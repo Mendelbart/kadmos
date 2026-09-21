@@ -271,7 +271,13 @@ function setupDSM() {
     DSM?.teardown();
 
     const [subset, cache] = getStoredSettings();
-    DSM = new DatasetMediator(DATASET, cache, {subset: DOMUtils.getSearchParam("subset") ?? subset});
+    try {
+        DSM = new DatasetMediator(DATASET, cache, {subset: DOMUtils.getSearchParam("subset") ?? subset});
+    } catch (e) {
+        console.error("Error occured during DSM construction, probably because of invalid cache.");
+        console.error(e);
+        DSM = new DatasetMediator(DATASET);
+    }
     DSM.observers.push(checkPagesNextButton, storeSettings);
 
     document.getElementById('dataset-filter-settings').replaceChildren(DSM.settings.selector.node, DSM.selector.node);
