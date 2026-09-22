@@ -148,10 +148,10 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
     }
 
     rangeTargetIndex(target: EventTarget): number | undefined {
-        if (!(target instanceof Element)) return;
+        if (!this.targetWithinBlock(target)) return;
 
         const el = target.closest(".selector-button, .selector-button-gap");
-        if (!el || !(el instanceof HTMLElement)) return;
+        if (!(el instanceof HTMLElement)) return;
         const index = parseInt(el.dataset.gridIndex ?? "");
 
         return isNaN(index) ? undefined : index;
@@ -161,13 +161,12 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
         this.rangeMode = mode;
     }
 
-    getRangeIndices(start: number, stop: number): number[] {
-        return this.getGridRangeIndices(start, stop)
-            .map(index => this.grid.getFromIndex(index))
-            .filter(x => x != null);
+    rangeIndexToButtonIndex(index: number | null): number | null {
+        if (index == null) return null;
+        return this.grid.getFromIndex(index);
     }
 
-    getGridRangeIndices(start: number, stop: number): number[] {
+    getRangeIndices(start: number, stop: number): number[] {
         switch (this.rangeMode) {
             case "walkRows":
                 return rangeBetween(start, stop);

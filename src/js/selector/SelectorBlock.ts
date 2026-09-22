@@ -192,14 +192,27 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         this.removeRangeListeners();
     }
 
-    rangeTargetIndex(target: EventTarget | null) {
+    targetWithinBlock(target: EventTarget | null): target is Element & boolean {
+        return target instanceof Element && target.closest(".selector-block") === this.node;
+    }
+
+    eventButtonIndex(target: EventTarget | null) {
+        if (!this.targetWithinBlock(target)) return;
         return SelectorButton.getEventTargetIndex(target);
+    }
+
+    rangeTargetIndex(target: EventTarget | null) {
+        return this.eventButtonIndex(target);
+    }
+
+    rangeIndexToButtonIndex(index: number | null) {
+        return index;
     }
 
     handleButtonClick(event: PointerEvent | KeyboardEvent): void {
         if (!event.target || event.type === "keydown" && (event as KeyboardEvent).key !== "Enter") return;
 
-        const index = SelectorButton.getEventTargetIndex(event.target);
+        const index = this.eventButtonIndex(event.target);
         if (index == null || this.isDisabled(index)) return;
 
         if (event.ctrlKey) {
@@ -233,6 +246,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         const target = document.elementFromPoint(event.clientX, event.clientY);
 
         const index = this.rangeTargetIndex(target);
+
         if (index == null || this.range.stop === index) return;
 
         this.range.start ??= index;
@@ -267,13 +281,15 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         if (!this.range) return;
 
         if (this.range.start != null) {
-            this.toggleButton(this.range.start);
+            const startButtonIndex = this.rangeIndexToButtonIndex(this.range.start);
+            if (startButtonIndex != null) this.toggleButton(startButtonIndex);
+            const target = document.elementFromPoint(event.clientX, event.clientY);
+            const rangeIndex = this.rangeTargetIndex(target);
 
-            if (event.type === "pointerup" && event.target instanceof HTMLElement && event.target.closest(".selector-block")) {
-                const index = this.rangeTargetIndex(document.elementFromPoint(event.clientX, event.clientY));
-                if (index != null && this.range.start === index) {
+            if (event.type === "pointerup" && target && target.closest(".selector-block") === this.node) {
+                if (rangeIndex != null && this.range.start === rangeIndex) {
                     this.toggleAllItems();
-                } else if (this.range.start !== this.range.stop) {
+                } else {
                     this.toggleItems(this.range.indices);
                 }
             }
@@ -290,7 +306,9 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
 
         this.buttonsRemoveClass(this.range.indices, "active");
         if (this.range.start != null && this.range.stop != null) {
-            this.range.indices = this.getRangeIndices(this.range.start, this.range.stop);
+            this.range.indices = this.getRangeIndices(this.range.start, this.range.stop)
+                .map(i => this.rangeIndexToButtonIndex(i))
+                .filter(x => x != null);
             this.buttonsAddClass(this.range.indices, "active");
         }
     }
