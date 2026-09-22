@@ -140,8 +140,6 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
     }
 
     setGridTemplateColumns(): void {
-        if (!this.node) this._noNodeError();
-
         let value = `repeat(${this.grid.m}, minmax(var(--button-min-width), var(--button-max-width)))`;
         if (this.labelPositions.has("rowstart")) value = "auto " + value;
         if (this.labelPositions.has("rowend")) value += " auto";
@@ -164,7 +162,9 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
     }
 
     getRangeIndices(start: number, stop: number): number[] {
-        return this.getGridRangeIndices(start, stop).map(index => this.grid.getFromIndex(index)).filter(x => x != null);
+        return this.getGridRangeIndices(start, stop)
+            .map(index => this.grid.getFromIndex(index))
+            .filter(x => x != null);
     }
 
     getGridRangeIndices(start: number, stop: number): number[] {
@@ -199,8 +199,6 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
     setupListeners() {
         super.setupListeners();
 
-        if (!this.node) this._noNodeError();
-
         this.node.addEventListener("click", this.onLabelClick);
         this.node.addEventListener("keypress", this.onLabelClick);
         this.node.addEventListener("pointerover", this.onLabelPointerOverOut);
@@ -210,7 +208,6 @@ export default class SelectorGridBlock<T> extends SelectorBlock<T> {
 
     removeListeners() {
         super.removeListeners();
-        if (!this.node) this._noNodeError();
 
         this.node.removeEventListener("click", this.onLabelClick);
         this.node.removeEventListener("keypress", this.onLabelClick);

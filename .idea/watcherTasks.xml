@@ -22,7 +22,7 @@
       <envs />
     </TaskOptions>
     <TaskOptions isEnabled="true">
-      <option name="arguments" value="--bundle src/js/index.js --target=es2020 --outdir=dist/js --minify --sourcemap" />
+      <option name="arguments" value="--bundle src/js/index.ts --target=es2020 --outdir=dist/js --minify --sourcemap" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ERROR" />

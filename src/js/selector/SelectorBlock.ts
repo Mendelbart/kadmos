@@ -1,7 +1,7 @@
 import {DOMUtils, ElementFitter, Observable} from "../utils";
 import {rangeBetween, range, sumCallback} from "../utils/array";
 import {SchemaSelectorBlockStyle} from "../../json/dataset.schema";
-import {span} from "../utils/dom";
+import {eventListenerWithDetail, span} from "../utils/dom";
 import {SelectorItemCallback} from "./Selector";
 
 const STYLE_PROPERTIES: Record<Exclude<keyof SchemaSelectorBlockStyle, "buttonWidth">, string> = {
@@ -27,11 +27,13 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     contentFitter: ElementFitter;
     labelFitter?: ElementFitter;
 
-    lastClickTargetIndex?: number;
-    rangeIndices?: number[] | null;
-    rangeStartIndex?: number |  null;
-    rangeStopIndex?: number | null;
-    isRangeSelecting?: boolean;
+    range?: {
+        indices: number[],
+        start: number | null,
+        stop: number | null
+    }
+
+    onRangePointerDownDetail: (event: PointerEvent) => void;
 
     constructor(items: T[], callbacks: SelectorButtonCallbacks<T>) {
         super();
@@ -45,12 +47,13 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         if (callbacks.label) this.setupLabelFitter();
 
         this.bindListeners();
+        this.onRangePointerDownDetail = eventListenerWithDetail(this.onRangePointerDown, {identifier: event => this.rangeTargetIndex(event.target)}).bind(this);
         this.node = this.getNode();
         this.setupListeners();
     }
 
     bindListeners() {
-        this.onButtonClick = this.onButtonClick.bind(this);
+        this.handleButtonClick = this.handleButtonClick.bind(this);
         this.onRangePointerDown = this.onRangePointerDown.bind(this);
         this.onRangePointerMove = this.onRangePointerMove.bind(this);
         this.onRangePointerUpCancel = this.onRangePointerUpCancel.bind(this);
@@ -95,8 +98,6 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     }
 
     applyStyle(style: SchemaSelectorBlockStyle) {
-        if (!this.node) this._noNodeError();
-
         if (style.buttonWidth != null) {
             style.buttonMinWidth = style.buttonWidth;
             style.buttonMaxWidth = style.buttonWidth;
@@ -106,10 +107,6 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         for (const [prop, value] of Object.entries(style) as [Exclude<keyof SchemaSelectorBlockStyle, "buttonWidth">, string | number][]) {
             this.node.style.setProperty(STYLE_PROPERTIES[prop], value.toString());
         }
-    }
-
-    protected _noNodeError(): never {
-        throw new Error("Selector block node isn't set up yet.");
     }
 
     setChecked(callback: (item: T, index: number) => boolean) {
@@ -153,39 +150,38 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     }
 
     toggleItems(indices: number[], {callObservers = true, updateIfDisabled = false}: {updateIfDisabled?: boolean, callObservers?: boolean} = {}): void {
-        if (!indices) return;
-
         const checked = !this.allChecked(indices);
         for (const index of indices) {
-            if (index != null && (updateIfDisabled || !this.isDisabled(index))) this.setButtonChecked(index, checked);
+            if (updateIfDisabled || !this.isDisabled(index)) this.setButtonChecked(index, checked);
         }
 
         if (callObservers) this.callObservers();
     }
 
+    listenForClick() {
+        this.node.addEventListener("click", this.handleButtonClick);
+    }
+    
+    dontListenForClick() {
+        this.node.removeEventListener("click", this.handleButtonClick);
+    }
+
     setupListeners(): void {
         if (!this.node) throw new Error("Setup node first.");
-        this.node.addEventListener("click", this.onButtonClick);
-        this.node.addEventListener("keypress", this.onButtonClick);
+        this.node.addEventListener("keydown", this.handleButtonClick);
 
         this.resetRangeSelection();
-        this.node.addEventListener("pointerdown", this.onRangePointerDown);
+        this.node.addEventListener("pointerdown", this.onRangePointerDownDetail);
     }
 
     removeListeners(): void {
         if (!this.node) throw new Error("Setup node first.");
-        this.node.removeEventListener("click", this.onButtonClick);
-        this.node.removeEventListener("keypress", this.onButtonClick);
+        this.node.removeEventListener("keydown", this.handleButtonClick);
 
-        this.node.removeEventListener("pointerdown", this.onRangePointerDown);
+        this.node.removeEventListener("pointerdown", this.onRangePointerDownDetail);
         this.node.removeEventListener("pointermove", this.onRangePointerMove);
 
         this.removeRangeListeners();
-    }
-
-    onButtonClick(event: PointerEvent | KeyboardEvent): void {
-        this.handleButtonClick(event);
-        this.handleButtonDblClick(event);
     }
 
     rangeTargetIndex(target: EventTarget | null) {
@@ -193,82 +189,96 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     }
 
     handleButtonClick(event: PointerEvent | KeyboardEvent): void {
-        if (!event.target || event.type === "keypress" && (event as KeyboardEvent).key !== "Enter") return;
+        if (!event.target || event.type === "keydown" && (event as KeyboardEvent).key !== "Enter") return;
 
         const index = SelectorButton.getEventTargetIndex(event.target);
         if (index == null || this.isDisabled(index)) return;
 
-        this.setButtonChecked(index, !this.isChecked(index));
+        if (event.ctrlKey) {
+            this.toggleAllItems();
+            return;
+        }
+
+        this.toggleButton(index);
         this.callObservers();
     }
 
-    handleButtonDblClick(event: PointerEvent | KeyboardEvent): void {
-        const index = this.rangeTargetIndex(event.target);
+    toggleButton(index: number) {
+        this.setButtonChecked(index, !this.isChecked(index));
+    }
 
-        if (event.type === "click" && event.detail % 2 === 0 && this.lastClickTargetIndex === index) {
-            this.toggleItems(range(this.buttons.length), {updateIfDisabled: true});
-        }
-
-        this.lastClickTargetIndex = index;
+    toggleAllItems(): void {
+        this.toggleItems(range(this.buttons.length), {updateIfDisabled: true});
     }
 
     resetRangeSelection() {
         this.removeRangeListeners();
 
-        if (this.rangeIndices) {
-            this.buttonsRemoveClass(this.rangeIndices, "active");
-        }
+        if (this.range) this.buttonsRemoveClass(this.range.indices, "active");
 
-        this.rangeIndices = null;
-        this.rangeStartIndex = null;
-        this.rangeStopIndex = null;
-        this.isRangeSelecting = false;
+        delete this.range;
     }
 
     onRangePointerMove(event: PointerEvent): void {
-        if (!this.isRangeSelecting) return;
+        if (!this.range) return;
         const target = document.elementFromPoint(event.clientX, event.clientY);
 
-        const clickItemIndex = this.rangeTargetIndex(target);
-        if (clickItemIndex === null || this.rangeStopIndex === clickItemIndex) return;
+        const index = this.rangeTargetIndex(target);
+        if (index == null || this.range.stop === index) return;
 
-        this.rangeStartIndex ??= clickItemIndex;
-        this.rangeStopIndex = clickItemIndex;
+        this.range.start ??= index;
+        this.range.stop = index;
         this.updateRangeSelection();
     }
 
-    onRangePointerDown(event: PointerEvent): void {
-        const clickItemIndex = this.rangeTargetIndex(event.target);
-        if (clickItemIndex !== null) {
-            this.rangeStartIndex = clickItemIndex;
-            this.rangeStopIndex = clickItemIndex;
-            this.updateRangeSelection();
+    onRangePointerDown(event: PointerEvent, detail: number): void {
+        if (detail % 2 !== 0) {
+            this.listenForClick();
+            return;
         }
+        this.dontListenForClick();
 
-        this.isRangeSelecting = true;
+        const index = this.rangeTargetIndex(event.target) ?? null;
+        this.range = {
+            start: index,
+            stop: index,
+            indices: []
+        };
+
+        if (index != null) this.updateRangeSelection();
+
         this.addRangeListeners();
     }
 
     onRangePointerUpCancel(event: PointerEvent): void {
-        if (!this.isRangeSelecting) return;
+        if (!this.range) return;
 
-        if (event.type === "pointerup" && this.rangeIndices && this.rangeStartIndex !== this.rangeStopIndex) {
-            this.toggleItems(this.rangeIndices);
+        if (this.range.start != null) {
+            this.toggleButton(this.range.start);
+
+            if (event.type === "pointerup" && event.target instanceof HTMLElement && event.target.closest(".selector-block")) {
+                const index = this.rangeTargetIndex(event.target);
+                if (index != null && this.range.start === index) {
+                    this.toggleAllItems();
+                } else if (this.range.start !== this.range.stop) {
+                    this.toggleItems(this.range.indices);
+                }
+            }
         }
 
         this.resetRangeSelection();
     }
 
     updateRangeSelection(): void {
-        if (this.rangeIndices) {
-            this.buttonsRemoveClass(this.rangeIndices, "active");
+        if (!this.range) {
+            console.error("Cannot update range while range isn't set.");
+            return;
         }
 
-        if (this.rangeStartIndex != null && this.rangeStopIndex != null) {
-            this.rangeIndices = this.getRangeIndices(this.rangeStartIndex, this.rangeStopIndex);
-            this.buttonsAddClass(this.rangeIndices, "active");
-        } else {
-            this.rangeIndices = null;
+        this.buttonsRemoveClass(this.range.indices, "active");
+        if (this.range.start != null && this.range.stop != null) {
+            this.range.indices = this.getRangeIndices(this.range.start, this.range.stop);
+            this.buttonsAddClass(this.range.indices, "active");
         }
     }
 
@@ -280,7 +290,6 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         document.addEventListener("pointerup", this.onRangePointerUpCancel);
         document.addEventListener("pointercancel", this.onRangePointerUpCancel);
 
-        if (!this.node) this._noNodeError();
         this.node.addEventListener("pointermove", this.onRangePointerMove);
     }
 
@@ -288,7 +297,6 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         document.removeEventListener("pointerup", this.onRangePointerUpCancel);
         document.removeEventListener("pointercancel", this.onRangePointerUpCancel);
 
-        if (!this.node) this._noNodeError();
         this.node.removeEventListener("pointermove", this.onRangePointerMove);
     }
 

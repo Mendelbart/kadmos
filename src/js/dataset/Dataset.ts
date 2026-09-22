@@ -89,6 +89,11 @@ export interface DatasetLanguages {
 }
 
 
+export function isDatasetKey(key: string): key is keyof typeof DATASETS_METADATA {
+    return key in DATASETS_METADATA;
+}
+
+
 export class Dataset<K extends LetterType> {
     metadata: DatasetMetadata;
     key: string;
@@ -116,10 +121,11 @@ export class Dataset<K extends LetterType> {
         if (data.combine) this.combine = this.processCombine(data.combine);
     }
 
-    static async fetch(key: keyof typeof DATASETS_METADATA): Promise<Dataset<keyof LetterElementMap>> {
+    static async fetch(key: string): Promise<Dataset<keyof LetterElementMap>> {
+        if (!isDatasetKey(key)) throw new Error("Invalid dataset key.");
         if (key in DatasetsCache) return Promise.resolve(DatasetsCache[key]);
 
-        const response = await fetch(DATASETS_ROOT + DATASETS_METADATA[key as keyof typeof DATASETS_METADATA].file);
+        const response = await fetch(DATASETS_ROOT + DATASETS_METADATA[key].file);
         const data = await response.json();
         const dataset = new this(data);
         dataset.key = key;
