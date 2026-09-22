@@ -607,3 +607,36 @@ export async function registerServiceWorker(scriptUrl: string) {
         console.log("Service workers not supported.");
     }
 }
+
+export interface DetailListenerConfig<T> {
+    maxDelay?: number,
+    identifier?: (event: T) => any
+}
+
+export function eventListenerWithDetail<T>(
+    callback: (event: T, detail: number) => void,
+    config: DetailListenerConfig<T> = {}
+): (event: T) => void {
+    let lastTime: number | undefined = undefined;
+    let detail: number = 1;
+    let lastIdentifier: any | undefined = undefined;
+
+    const maxDelay = config.maxDelay ?? 400;
+    const identifier = config.identifier ?? (() => true);
+
+    return (event) => {
+        const time = Date.now();
+        const ident = identifier(event);
+
+        if (lastTime != null && time - lastTime <= maxDelay && lastIdentifier != null && lastIdentifier === ident) {
+            detail++;
+        } else {
+            detail = 1;
+        }
+
+        lastTime = time;
+        lastIdentifier = ident;
+
+        callback(event, detail);
+    };
+}

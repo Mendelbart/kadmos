@@ -86,10 +86,13 @@ export default class Game<T, A extends QuizAnswers> {
 
         this.mainCard = this.cardFactory.createCard();
         GC.mainCardContainer.replaceChildren(this.mainCard.node);
-        GC.nextButton.textContent = "Next";
 
         this.onInputKeypress = this.onInputKeypress.bind(this);
         this.fastModeOnInput = this.fastModeOnInput.bind(this);
+
+        GC.nextButton.textContent = "Next";
+        GC.nextButton.addEventListener("click", () => this.transition(() => this.newRound()));
+        GC.submitButton.addEventListener("click", () => this.transition(() => this.submitRound()));
     }
 
     static genericSettings(values?: Partial<GameConfig>): SettingCollection<GameConfig> {

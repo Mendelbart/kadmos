@@ -3,7 +3,7 @@ import {Setting} from "./ValueElement";
 
 let nameCount = 0;
 
-export abstract class ButtonGroup<T> extends Observable<[T]> implements Setting<T> {
+export abstract class AbstractButtonGroup<T> extends Observable<[T]> implements Setting<T> {
     node: HTMLFieldSetElement;
     inputs: Record<string, HTMLInputElement>;
 
@@ -42,6 +42,10 @@ export abstract class ButtonGroup<T> extends Observable<[T]> implements Setting<
         return Object.keys(this.inputs).length;
     }
 
+    setInputDisabled(key: T, disabled: boolean): void {
+        this.inputs[key as string].disabled = disabled;
+    }
+
     setDisabled(disabled: boolean): void {
         for (const input of Object.values(this.inputs)) {
             input.disabled = disabled;
@@ -59,34 +63,34 @@ export abstract class ButtonGroup<T> extends Observable<[T]> implements Setting<
     }
 }
 
-export class RadioButtonGroup extends ButtonGroup<string> {
+export class RadioButtonGroup<T extends string = string> extends AbstractButtonGroup<T> {
     isValidInput(input: HTMLInputElement): boolean {
         return input.type === "radio";
     }
 
-    get value(): string {
+    get value(): T {
         for (const input of Object.values(this.inputs)) {
             if (input.checked) {
-                return input.value;
+                return input.value as T;
             }
         }
 
         throw new Error("No input set.");
     }
 
-    set value(checked: string) {
+    set value(checked: T) {
         if (!this.inputs[checked]) throw new Error(`Unknown input key ${checked}.`);
 
         this.inputs[checked].checked = true;
     }
 }
 
-export class CheckboxButtonGroup extends ButtonGroup<string[]> implements Setting<string[]> {
-    get value(): string[] {
-        return ObjectUtils.filterKeys(this.inputs, input => input.checked);
+export class ButtonGroup<T extends string = string> extends AbstractButtonGroup<T[]> {
+    get value(): T[] {
+        return ObjectUtils.filterKeys(this.inputs, input => input.checked) as T[];
     }
 
-    set value(checked: string[]) {
+    set value(checked: T[]) {
         const checkedSubset = ObjectUtils.subsetToBoolRecord(checked, Object.keys(this.inputs));
         for (const [key, input] of Object.entries(this.inputs)) {
             input.checked = checkedSubset[key] ?? false;
@@ -105,12 +109,12 @@ interface ButtonGroupConfig {
     exclusiveCheckboxes?: boolean
 }
 
-export function createButtonGroup(data: Record<string, string> | string[], config: ButtonGroupConfig & {type: "radio"}): RadioButtonGroup
-export function createButtonGroup(data: Record<string, string> | string[], config?: ButtonGroupConfig & {type?: "checkbox"}): CheckboxButtonGroup
-export function createButtonGroup(data: Record<string, string> | string[], config?: ButtonGroupConfig & {type: "radio" | "checkbox"}): RadioButtonGroup | CheckboxButtonGroup
-export function createButtonGroup(data: Record<string, string> | string[], config: ButtonGroupConfig = {}): RadioButtonGroup | CheckboxButtonGroup {
+export function createButtonGroup<T extends string = string>(data: Record<T, string> | T[], config: ButtonGroupConfig & {type: "radio"}): RadioButtonGroup<T>
+export function createButtonGroup<T extends string = string>(data: Record<T, string> | T[], config?: ButtonGroupConfig & {type?: "checkbox"}): ButtonGroup<T>
+export function createButtonGroup<T extends string = string>(data: Record<T, string> | T[], config?: ButtonGroupConfig & {type: "radio" | "checkbox"}): RadioButtonGroup<T> | ButtonGroup<T>
+export function createButtonGroup<T extends string = string>(data: Record<T, string> | T[], config: ButtonGroupConfig = {}): RadioButtonGroup<T> | ButtonGroup<T> {
     if (Array.isArray(data)) {
-        data = Object.fromEntries(data.map(x => [x, x]));
+        data = Object.fromEntries(data.map(x => [x, x])) as Record<T, T>;
     }
 
     const values = Object.keys(data);
@@ -133,7 +137,7 @@ export function createButtonGroup(data: Record<string, string> | string[], confi
     const disabledSubset = ObjectUtils.subsetToBoolRecord(config.disabled ?? [], values);
 
     for (const [value, displayName] of Object.entries(data)) {
-        const [input, label] = DOMUtils.button(useRadioButtons ? "radio" : "checkbox", value, displayName);
+        const [input, label] = DOMUtils.button(useRadioButtons ? "radio" : "checkbox", value, displayName as string);
 
         input.name = useRadioButtons ? name : `${name}_${value}`;
         input.disabled = disabledSubset[value];
@@ -142,7 +146,7 @@ export function createButtonGroup(data: Record<string, string> | string[], confi
         container.append(input, label);
     }
 
-    const bg = type === "checkbox" ? new CheckboxButtonGroup(container) : new RadioButtonGroup(container);
+    const bg = type === "checkbox" ? new ButtonGroup<T>(container) : new RadioButtonGroup<T>(container);
     if (config.label) bg.label(config.label);
 
     return bg;
