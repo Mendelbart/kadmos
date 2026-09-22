@@ -19,6 +19,8 @@ export interface SelectorButtonCallbacks<T> {
     label?: SelectorItemCallback<T, string>
 }
 
+const DOUBLE_CLICK_TIMEOUT = 400;
+
 export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     readonly items: T[];
     readonly checked: boolean[];
@@ -47,7 +49,10 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         if (callbacks.label) this.setupLabelFitter();
 
         this.bindListeners();
-        this.onRangePointerDownDetail = eventListenerWithDetail(this.onRangePointerDown, {identifier: event => this.rangeTargetIndex(event.target)}).bind(this);
+        this.onRangePointerDownDetail = eventListenerWithDetail(this.onRangePointerDown, {
+            identifier: event => this.rangeTargetIndex(event.target),
+            maxDelay: DOUBLE_CLICK_TIMEOUT
+        }).bind(this);
         this.node = this.getNode();
         this.setupListeners();
     }
@@ -159,10 +164,13 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     }
 
     listenForClick() {
+        this.node.classList.add("disable-touch-action");
+        setTimeout(() => {if (!this.range) this.node.classList.remove("disable-touch-action")}, DOUBLE_CLICK_TIMEOUT);
         this.node.addEventListener("click", this.handleButtonClick);
     }
     
     dontListenForClick() {
+        this.node.classList.remove("disable-touch-action");
         this.node.removeEventListener("click", this.handleButtonClick);
     }
 
@@ -213,6 +221,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
 
     resetRangeSelection() {
         this.removeRangeListeners();
+        this.node.classList.remove("range-selecting", "disable-touch-action");
 
         if (this.range) this.buttonsRemoveClass(this.range.indices, "active");
 
@@ -238,7 +247,11 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         }
         this.dontListenForClick();
 
-        const index = this.rangeTargetIndex(event.target) ?? null;
+        this.startRangeSelecting(this.rangeTargetIndex(event.target) ?? null);
+    }
+
+    startRangeSelecting(index: number | null) {
+        this.node.classList.add("range-selecting");
         this.range = {
             start: index,
             stop: index,
@@ -257,7 +270,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
             this.toggleButton(this.range.start);
 
             if (event.type === "pointerup" && event.target instanceof HTMLElement && event.target.closest(".selector-block")) {
-                const index = this.rangeTargetIndex(event.target);
+                const index = this.rangeTargetIndex(document.elementFromPoint(event.clientX, event.clientY));
                 if (index != null && this.range.start === index) {
                     this.toggleAllItems();
                 } else if (this.range.start !== this.range.stop) {
