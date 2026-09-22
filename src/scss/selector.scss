@@ -43,6 +43,10 @@ $selectorBorderRadius: .25rem;
     --button-min-width: 0;
     --button-max-width: 1fr;
 
+    &.range-selecting, &.disable-touch-action {
+      touch-action: none;
+    }
+
     &.selector-block-flex {
       display: flex;
       flex-wrap: wrap;
@@ -98,7 +102,6 @@ $selectorBorderRadius: .25rem;
 
   .selector-button {
     @include button-events("--clr-selector-button");
-    touch-action: none;
     cursor: pointer;
     transition: border $shortTransition, background $shortTransition, color $shortTransition;
 
