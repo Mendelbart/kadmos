@@ -123,10 +123,14 @@ function setupDatasetSelect() {
             });
         } catch (e) {
             console.error(`Error occured fetching dataset with key ${datasetSelect.value}`);
-            const selectedOption = datasetSelect.querySelector("option[selected]");
-            if (selectedOption) (selectedOption as HTMLOptionElement).disabled = true;
+            disableCurrentDatasetOption();
         }
     });
+}
+
+function disableCurrentDatasetOption() {
+    const selectedOption = datasetSelect.querySelector("option:checked");
+    if (selectedOption) (selectedOption as HTMLOptionElement).disabled = true;
 }
 
 
