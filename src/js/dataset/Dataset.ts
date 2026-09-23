@@ -120,6 +120,8 @@ export class Dataset<K extends LetterType> {
         if (key in DatasetsCache) return Promise.resolve(DatasetsCache[key]);
 
         const response = await fetch(DATASETS_ROOT + DATASETS_METADATA[key].file);
+        if (!response.ok) throw new Error(`Response errored with status ${response.status}`);
+
         const data = await response.json();
         const dataset = new this(data);
         dataset.key = key;
