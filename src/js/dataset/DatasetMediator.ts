@@ -334,8 +334,7 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
     }
 
     currentForms(): string[] {
-        const defaultKey = this.subset.defaultFormKey();
-        return this.settings.selector?.getValue("forms") ?? [defaultKey];
+        return this.settings.selector?.getValue("forms") ?? [this.subset.defaultFormKey()];
     }
 
     readSelectorSettings() {
