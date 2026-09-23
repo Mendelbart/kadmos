@@ -30,12 +30,6 @@ const headingElementFactory = DOMFactory(
 
 const DATASETS_ROOT = "./json/datasets/";
 export const DEFAULT_DATASET = "greek";
-
-const DEFAULT_METADATA = {
-    terms: {letter: "letter"},
-    dir: "ltr"
-};
-
 export const TERMS = ["letter", "letters"] as const;
 
 const DEFAULT_LANGUAGES: SchemaLanguages = {
@@ -80,7 +74,7 @@ interface DatasetCombineConfig {
 
 export interface DatasetGameSettings {
     properties: string[];
-    language: string;
+    language: keyof typeof LANGUAGES;
 }
 
 export interface DatasetLanguages {
@@ -163,11 +157,11 @@ export class Dataset<K extends LetterType> {
     }
 
     processMetadata(metadata: SchemaMetadata): DatasetMetadata {
-        const result = Object.assign({}, DEFAULT_METADATA, metadata);
-        const letter = result.terms.letter ?? "letter";
-        const letters = result.terms.letters ?? letter;
+        const letter = metadata.terms?.letter ?? "letter";
+        const letters = metadata.terms?.letters ?? letter + "s";
         return {
-            ...result,
+            ...metadata,
+            dir: metadata.dir ?? "ltr",
             terms: {letter, letters}
         }
     }
@@ -250,10 +244,10 @@ export class Dataset<K extends LetterType> {
 
     languageSetting(checked?: string) {
         const keys = this.languages.keys;
-        if (keys.length === 1) return new ConstantSetting(keys[0] as string);
+        if (keys.length === 1) return new ConstantSetting(keys[0]);
         
         return createButtonGroup(
-            ObjectUtils.onlyKeys(LANGUAGES, keys),
+            ObjectUtils.onlyKeys(LANGUAGES, keys) as Record<typeof keys[number], string>,
             {
                 label: "Language",
                 checked: checked ?? this.languages.default,
@@ -393,7 +387,7 @@ export class Dataset<K extends LetterType> {
         if (!this.fonts) throw new Error("Dataset doesn't have fonts.");
         
         if (Object.keys(this.fonts.data).length === 1) return new ConstantSetting(this.fonts.defaultKey);
-        
+
         const setting = createButtonGroup(
             ObjectUtils.map(this.fonts.data, font => font.label),
             {

@@ -137,7 +137,7 @@ export function createButtonGroup<T extends string = string>(data: Record<T, str
     const disabledSubset = ObjectUtils.subsetToBoolRecord(config.disabled ?? [], values);
 
     for (const [value, displayName] of Object.entries(data)) {
-        const [input, label] = DOMUtils.button(useRadioButtons ? "radio" : "checkbox", value, displayName as string);
+        const [input, label] = DOMUtils.button(useRadioButtons ? "radio" : "checkbox", displayName as string, value);
 
         input.name = useRadioButtons ? name : `${name}_${value}`;
         input.disabled = disabledSubset[value];

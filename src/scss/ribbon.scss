@@ -1,0 +1,33 @@
+.ribbon {
+  background: var(--clr-surface);
+  padding: .625rem .875rem;
+  border: 1px solid var(--clr-surface-border);
+  border-radius: .8rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+
+  .ribbon-buttons {
+    gap: .5rem;
+    --clr-grp-button-border: transparent;
+    --clr-grp-button-checked-border: transparent;
+    --clr-grp-button-text-checked: var(--clr-background);
+
+    &> .button {
+      @include button-events("--clr-ribbon-button");
+    }
+
+    &> input:checked + .button {
+      @include button-events("--clr-ribbon-button-checked");
+    }
+
+    &> .button {
+      border-radius: $borderRadiusSmall;
+    }
+  }
+
+  &.contents-hidden {
+    background: transparent;
+    border-color: transparent;
+  }
+}

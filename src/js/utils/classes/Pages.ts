@@ -1,7 +1,8 @@
-import {DOMFactory, GrabbedNodes, grabNodes, hide, show, tag, toggleShown, transition} from "../dom";
+import {DOMFactory, GrabbedNodes, hide, show, tag, toggleShown, transition} from "../dom";
 import FunctionSet from "./FunctionSet";
 
 const PagesGrabNodes = {
+    container: ["div"],
     headings: ["div", ".pages-headings"],
     buttons: ["div", ".pages-buttons"],
     buttonBack: ["button", ".pages-back-button"],
@@ -12,18 +13,19 @@ const PagesGrabNodes = {
 
 const pagesFactory = DOMFactory(
     `<div class="pages-container">
-<div class="pages-header">
-    <div class="pages-headings"></div>
-
-    <div class="pages-buttons button-group">
-        <button class="pages-button pages-back-button button-grey">Back</button>
-        <button class="pages-button pages-next-button button-accent">Next</button>
-        <button class="pages-button pages-finish-button button-accent">Finish</button>
+    <div class="pages-header">
+        <div class="pages-headings"></div>
+    
+        <div class="pages-buttons button-group">
+            <button class="pages-button pages-back-button button-grey">Back</button>
+            <button class="pages-button pages-next-button button-accent">Next</button>
+            <button class="pages-button pages-finish-button button-accent">Finish</button>
+        </div>
     </div>
     
     <div class="pages-contents"></div>
 </div>`,
-    {...PagesGrabNodes, container: ["div"]}
+    PagesGrabNodes
 )
 
 export default class Pages {
@@ -34,27 +36,12 @@ export default class Pages {
     protected openIndex?: number;
     readonly onFinish: FunctionSet<() => void>;
 
-    constructor(container?: HTMLDivElement) {
-        if (container) {
-            this.elements = grabNodes(container, PagesGrabNodes);
-            this.node = container;
-            this.contents = [
-                ...this.elements.contents.querySelectorAll(".page-content")
-            ].filter(content => content instanceof HTMLElement);
-            this.headings = [
-                ...this.elements.headings.querySelectorAll(".page-heading")
-            ].filter(heading => heading instanceof HTMLElement);
-            hide(this.contents.concat(this.headings));
+    constructor() {
+        this.elements = pagesFactory();
+        this.node = this.elements.container;
+        this.contents = [];
+        this.headings = [];
 
-            if (this.contents.length !== this.headings.length) throw new Error("Number of pages headings and contents don't match.");
-            if (this.contents.length > 0) this.open(0);
-        } else {
-            const nodes = pagesFactory();
-            this.elements = nodes;
-            this.node = nodes.container;
-            this.contents = [];
-            this.headings = [];
-        }
         this.onFinish = new FunctionSet();
         this.setupListeners();
     }

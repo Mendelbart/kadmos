@@ -14,6 +14,7 @@ export type Nodes<E extends Node> = Iterable<E> | E
 const domParser = new DOMParser();
 
 let IdPrefixCounter = 0;
+let namePrefixCounter = 0;
 
 export function createTemplate(content: string | Node): HTMLTemplateElement {
     const template = document.createElement("template");
@@ -55,6 +56,10 @@ export function grabNode<K extends keyof HTMLElementTagNameMap>(parent: ParentNo
     return selectNode(parent, selectorWithTagName) as HTMLElementTagNameMap[K];
 }
 
+export function grabFromHTML<N extends GrabNodesRecord>(html: string, nodes: N) {
+    return grabNodes(domParser.parseFromString(html, "text/html").body, nodes);
+}
+
 export function DOMFactory<N extends GrabNodesRecord>(html: string, nodes: N) {
     const doc = domParser.parseFromString(html, "text/html");
     return () => grabNodes(document.importNode(doc.body, true), nodes);
@@ -78,15 +83,16 @@ export function ElementFactory(content: string | Element, tagName?: string): () 
 
 const buttonInputFactory = ElementFactory(`<input class="button-check form-input" autocomplete="off" />`, "input");
 const buttonLabelFactory = ElementFactory(`<label class="button"></label>`, "label");
-export function button(type: string, value: string, labelContent?: string | Node, id?: string): [HTMLInputElement, HTMLLabelElement] {
+export function button(type: string, labelContent?: string | Node, value: string = "", attrs: ElementAttrs = {}): [HTMLInputElement, HTMLLabelElement] {
     const input = buttonInputFactory();
     const label = buttonLabelFactory();
-    id ??= uniqueIdPrefix("button") + value;
+    const id = attrs.id?.toString() ?? uniqueIdPrefix("button") + value;
 
     setAttrs(input, {
+        ...attrs,
         type: type,
         value: value,
-        id: id
+        id: id,
     });
     label.htmlFor = id;
     label.tabIndex = 0;
@@ -282,6 +288,11 @@ export function uniqueIdPrefix(prefix: string, connector = "_"): string {
     return prefix + IdPrefixCounter + connector;
 }
 
+export function uniqueName(name: string): string {
+    namePrefixCounter++;
+    return name + "_" + namePrefixCounter;
+}
+
 /**
  * If the node doesn't have an ID, set it to defaultId.
  * Return its ID.
@@ -353,62 +364,6 @@ export function classesToList(classes?: string | string[]): string[] {
 
 export function scaleElement(element: { style: CSSStyleDeclaration }, scale: number): void {
     element.style.scale = scale.toString();
-}
-
-export function setupRibbon(container: HTMLElement, closable: boolean = false) {
-    const contents = container.querySelector(".ribbon-contents");
-    const inputs: NodeListOf<HTMLInputElement> = container.querySelectorAll(".ribbon-buttons input[type=checkbox]");
-    container.dataset.closable = closable.toString();
-
-    let openId = container.dataset.openId;
-    if (!openId) {
-        for (const input of inputs) {
-            if (input.checked) {
-                openId = input.dataset.contentId;
-                break;
-            }
-        }
-    }
-
-    hide(contents.querySelectorAll(".ribbon-content"));
-    if (!openId && !closable) {
-        openId = inputs[0].dataset.contentId;
-        inputs[0].checked = true;
-    }
-
-    if (openId) {
-        show([document.getElementById(openId), contents]);
-    } else if (closable) {
-        container.classList.add("contents-hidden");
-    }
-
-    container.querySelector('.ribbon-buttons').addEventListener("change", ribbonButtonsChangeListener);
-}
-
-function ribbonButtonsChangeListener(event: Event) {
-    transition(() => {
-        const input = event.target;
-        const container = input.closest(".ribbon");
-        const contents = container.querySelector('.ribbon-contents');
-
-        if (input.checked) {
-            const previousOpenId = container.dataset.openId;
-            if (!container.classList.contains("contents-hidden") && previousOpenId) {
-                hide(document.getElementById(previousOpenId));
-                container.querySelector(`.ribbon-buttons input[data-content-id="${previousOpenId}"]`).checked = false;
-            }
-
-            container.dataset.openId = input.dataset.contentId;
-            show([document.getElementById(input.dataset.contentId), contents]);
-            container.classList.remove("contents-hidden");
-        } else if (container.dataset.closable === "true") {
-            container.classList.add("contents-hidden")
-            hide(contents);
-            container.dataset.openId = "";
-        } else {
-            input.checked = true;
-        }
-    });
 }
 
 const dialogFactory = DOMFactory(
@@ -553,14 +508,6 @@ export function transition(update: () => void, types: string[] = []) {
     } else {
         requestAnimationFrame(update);
     }
-}
-
-export function setARIA(element: HTMLElement, attribute: string, value: string | boolean) {
-    element.setAttribute("aria-" + attribute, typeof value === "boolean" ? value.toString() : value);
-}
-
-export function getARIA(element: HTMLElement, attribute: string): string | null {
-    return element.getAttribute("aria-" + attribute);
 }
 
 /**
