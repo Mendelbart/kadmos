@@ -25,6 +25,11 @@ $bodyMaxWidth: 26rem;
 @import 'card';
 @import 'settings';
 @import 'braille';
+@import 'pages';
+@import 'ribbon';
+@import 'selector';
+@import 'game';
+
 
 :root {
   --font-scale: 1;
@@ -382,111 +387,6 @@ input[type="range"] {
   }
 }
 
-#playButton {
-  font-size: 1.2rem;
-  padding: 0 .8rem;
-}
-
-
-.ribbon {
-  background: var(--clr-surface);
-  padding: .625rem .875rem;
-  border: 1px solid var(--clr-surface-border);
-  border-radius: .8rem;
-  display: flex;
-  flex-direction: column;
-  gap: .6rem;
-
-  .ribbon-buttons {
-    gap: .5rem;
-    --clr-grp-button-border: transparent;
-    --clr-grp-button-checked-border: transparent;
-    --clr-grp-button-text-checked: var(--clr-background);
-
-    &> .button {
-      @include button-events("--clr-ribbon-button");
-    }
-
-    &> input:checked + .button {
-      @include button-events("--clr-ribbon-button-checked");
-    }
-
-    &> .button {
-      border-radius: $borderRadiusSmall;
-    }
-  }
-
-  &.contents-hidden {
-    background: transparent;
-    border-color: transparent;
-  }
-}
-
-.pages-container {
-  padding: .5rem 0;
-
-  .pages-header {
-    display: flex;
-    padding: .5rem .25rem;
-    border-bottom: 1px solid var(--clr-border-soft);
-    align-items: center;
-
-    .pages-headings {
-      flex: 1;
-
-      h2 {
-        margin: 0;
-      }
-    }
-
-    .pages-buttons {
-      gap: .5rem;
-    }
-
-    button {
-      padding: .4375rem .5625rem;
-    }
-  }
-
-  .pages-contents {
-    padding: .5rem .25rem;
-  }
-}
-
-#card-settings-ribbon {
-  position: relative;
-  margin-block: .4rem;
-  --clr-surface: var(--clr-surface-standout);
-  border-color: transparent;
-
-  .ribbon-buttons {
-    position: absolute;
-    top: -2.75rem;
-    left: 0;
-    translate: 0;
-  }
-}
-
-#card-settings-button + label {
-  padding-block: .25em;
-
-  transition: background $shortTransition;
-
-  &::before, &::after {
-    content: "A";
-    font-weight: 700;
-  }
-
-  &::before {
-    font-size: 1.4rem;
-  }
-
-  &::after {
-    font-size: 1rem;
-  }
-}
-
-
 dialog {
   h1 {
     font-size: 1.25rem;
@@ -545,79 +445,6 @@ dialog {
     background: #{'linear-gradient(in oklch longer hue to right, oklch(0.66 0.18 0), oklch(0.66 0.18 0))'};
   }
 }
-
-
-@import 'selector';
-
-
-/******************** GAME ******************************/
-#progress-bar {
-  width: 100%;
-  --height: .4rem;
-  height: var(--height);
-  background: var(--clr-range);
-  border-radius: .2rem;
-  transition: opacity $shortTransition;
-  margin-block-end: .25rem;
-
-  &::after {
-    --gradient-base-size: 0.75;
-    --width: var(--progress, 0);
-    --gradient-scale: calc((var(--width) * (1 - var(--gradient-base-size)) + var(--gradient-base-size)));
-
-    content: "";
-    display: block;
-    width: calc(var(--height) + var(--width) * (100% - var(--height)));
-    height: 100%;
-    opacity: 1;
-    background: linear-gradient(to right, oklch(0.54 0.18 var(--accent-hue)), oklch(0.64 0.155 var(--accent-hue)));
-    background-size: calc(100% / (var(--gradient-scale) * var(--width)));
-    border-radius: inherit;
-
-    transition: width 125ms ease-out;
-    view-transition-name: match-element;
-    view-transition-class: progress-bar;
-  }
-}
-
-#game-cards {
-  margin: 1rem;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.125rem;
-}
-
-#game-reference-cards {
-  display: flex;
-  gap: .625rem;
-  min-width: 0;
-  overflow-x: auto;
-}
-
-#game-inputs, #game-evals {
-  display: flex;
-  flex-direction: column;
-  gap: .625rem;
-}
-
-#game-evals {
-  position: absolute;
-  inset: 0;
-}
-
-#game-inputs-evals-container {
-  position: relative;
-  margin-block-end: .625rem;
-}
-
-#game-footer {
-  display: flex;
-  align-items: start;
-  justify-content: end;
-}
-
 
 
 /*************** SYMBOLS, EVAL *******************/

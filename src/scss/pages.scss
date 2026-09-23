@@ -1,0 +1,30 @@
+.pages-container {
+  padding: .5rem 0;
+
+  .pages-header {
+    display: flex;
+    padding: .5rem .25rem;
+    border-bottom: 1px solid var(--clr-border-soft);
+    align-items: center;
+
+    .pages-headings {
+      flex: 1;
+
+      h2 {
+        margin: 0;
+      }
+    }
+
+    .pages-buttons {
+      gap: .5rem;
+    }
+
+    button {
+      padding: .4375rem .5625rem;
+    }
+  }
+
+  .pages-contents {
+    padding: .5rem .25rem;
+  }
+}

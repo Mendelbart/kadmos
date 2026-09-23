@@ -23,60 +23,6 @@
             <div id="game-select-container" class="styled-select">
                 <select id="datasetSelect" aria-label="Select Dataset"></select>
             </div>
-
-            <div id="game-settings-pages" class="pages-container">
-                <div class="pages-header">
-                    <div class="pages-headings">
-                        <h2 class="page-heading" data-for="game-filters">Select <span class="term-letters"></span></h2>
-                        <h2 class="page-heading" data-for="game-settings" style="display:none">Settings</h2>
-                    </div>
-
-                    <div class="pages-buttons button-group">
-                        <button class="pages-button pages-back-button button-grey" style="display:none">Back</button>
-                        <button class="pages-button pages-next-button button-accent">Next</button>
-                        <button class="pages-button pages-finish-button button-accent" id="start-game-button" style="display:none">Play</button>
-                    </div>
-                </div>
-
-                <div class="pages-contents">
-                    <div id="game-filters" class="page-content">
-                        <div id="dataset-filter-settings" class="settings"></div>
-                    </div>
-                    <div id="game-settings" class="settings page-content" style="display:none">
-                        <div id="dataset-game-settings" class="settings"></div>
-                        <div id="generic-game-settings" class="settings"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="game-container" style="display:none">
-            <div id="progress-bar"></div>
-
-            <div id="game-cards">
-                <div id="game-main-card-container"></div>
-                <div id="game-reference-cards" style="display: none"></div>
-            </div>
-
-            <div id="game-inputs-evals-container">
-                <div id="game-inputs"></div>
-                <div id="game-evals"></div>
-            </div>
-
-            <div id="game-footer">
-                <button type="submit" id="item-submit-button" class="button-accent">Submit</button>
-                <button type="button" id="item-next-button" class="button-accent" style="display:none">Next</button>
-            </div>
-
-            <div id="card-settings-ribbon" class="ribbon ribbon-closable">
-                <div class="ribbon-buttons button-group">
-                    <input type="checkbox" value="card" id="card-settings-button" data-content-id="card-settings">
-                    <label for="card-settings-button" class="button"></label>
-                </div>
-                <div class="ribbon-contents">
-                    <div id="card-settings" class="settings ribbon-content"></div>
-                </div>
-            </div>
         </div>
     </body>
 </html>

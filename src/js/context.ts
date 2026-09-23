@@ -7,11 +7,16 @@ import {encodeBase64BoolArray, decodeBase64BoolArray} from "./utils/base64";
 import DatasetMediator, {DatasetCache, SubsetCache} from "./dataset/DatasetMediator";
 import {createButtonGroup} from "./settings/ButtonGroup";
 import Pages from "./utils/classes/Pages";
-import {grabNode, selectNode} from "./utils/dom";
+import {grabFromHTML, grabNode, selectNode, span, tag} from "./utils/dom";
 import {SelectorSettings} from "./dataset/DatasetSubset";
 
 
-const GAME_SETTINGS_PAGES = new Pages(grabNode(document, "div", "#game-settings-pages"));
+const SwitchTrueValue = "1";
+const SwitchFalseValue = "0";
+type SwitchValue = typeof SwitchTrueValue | typeof SwitchFalseValue;
+
+const GAME_SETTINGS_PAGES = getGameSettingsPages();
+grabNode(document, "div", "#new-game-settings").append(GAME_SETTINGS_PAGES.node)
 
 /** @type {Game} */
 let GAME: Game<any, any>;
@@ -23,13 +28,34 @@ let DSM: DatasetMediator<any>;
 
 const datasetSelect = grabNode(document, "select", "#datasetSelect");
 
-
 const GENERIC_GAME_SETTINGS = getGenericGameSettings();
-let PAGE_SETTINGS;
-
+const PAGE_SETTINGS = getPageSettings();
 
 DOMUtils.trackDevicePixelRatio();
 
+function getGameSettingsPages() {
+    const pages = new Pages();
+
+    const {filters, settings} = grabFromHTML(
+        `<div id="game-filters">
+    <div id="dataset-filter-settings" class="settings"></div>
+</div>
+<div id="game-settings" class="settings">
+    <div id="dataset-game-settings" class="settings"></div>
+    <div id="generic-game-settings" class="settings"></div>
+</div>`,
+        {
+            filters: ["div", "#game-filters"],
+            settings: ["div", "#game-settings"]
+        }
+    );
+
+    pages.addPage(filters, tag("h2", "", "Select ", span(".term-letters")));
+    pages.addPage(settings, "Settings");
+    pages.elements.buttonFinish.id = "start-game-button";
+    pages.elements.buttonFinish.textContent = "Play";
+    return pages;
+}
 
 function getGenericGameSettings(): SettingCollection<GameConfig> {
     const stored = localStorage.getItem("game_generic");
@@ -54,7 +80,6 @@ function getGenericGameSettings(): SettingCollection<GameConfig> {
 
 /******************** SETUP ***********************/
 export function setup() {
-    setupPageSettings();
     setupButtonListeners();
 
     window.addEventListener("popstate", () => DOMUtils.transition(readFromSearchParams));
@@ -67,7 +92,7 @@ export function setup() {
     });
 
     showHeading(window.localStorage.getItem("show_dataset_heading") === "true");
-    selectNode(document, "#game-heading").addEventListener("click", toggleHeadingShown);
+    selectNode(document, "#game-heading").addEventListener("dblclick", toggleHeadingShown);
 }
 
 function showHeading(showDatasetHeading: boolean) {
@@ -108,18 +133,15 @@ function setupDatasetSelect() {
 function setPlaying(playing: boolean) {
     if (!playing) {
         GAME_SETTINGS_PAGES.open(0);
-        GAME?.cleanup();
+        GAME?.remove();
     }
 
     DOMUtils.toggleShown(playing,
-        [
-            document.getElementById('game-container'),
-            document.getElementById('stop-game-button')
-        ],
-        [
-            document.getElementById('new-game-settings')
-        ]
+        grabNode(document, "button", '#stop-game-button'),
+        grabNode(document, "div", '#new-game-settings')
     );
+
+    if (playing) document.body.append(GAME.node);
 }
 
 /***************************** PAGE SETTINGS ************************/
@@ -132,26 +154,28 @@ interface PageConfig {
 }
 
 
-function setupPageSettings() {
+function getPageSettings() {
     const getStored = (key: string) => window.localStorage.getItem(key);
-    PAGE_SETTINGS = new SettingCollection<PageConfig>({
+    const settings = new SettingCollection<PageConfig>({
         accentHue: getAccentHueSetting(getStored("accentHue")),
         colorMode: getPageLightDarkModeSetting(getStored("colorMode")),
         useViewTransitions: getViewTransitionSetting(getStored("useViewTransitions"))
     });
 
-    PAGE_SETTINGS.observers.push((values, changedKey) => {
+    settings.observers.push((values, changedKey) => {
         if (changedKey) window.localStorage.setItem(changedKey, values[changedKey].toString());
     });
 
-    PAGE_SETTINGS.node.remove();
+    settings.node.remove();
 
     const dialog = DOMUtils.createDialog(
-        "Settings", PAGE_SETTINGS.node,
+        "Settings", settings.node,
         selectNode(document, "#open-settings-button")
     );
     dialog.id = "page-settings";
     document.body.append(dialog);
+
+    return settings;
 }
 
 
@@ -213,6 +237,7 @@ function setLightDarkMode(mode: ColorMode) {
 
 function getViewTransitionSetting(value: string | null) {
     if (value !== SwitchFalseValue && value !== SwitchTrueValue) {
+        console.log(value, SwitchFalseValue, value === SwitchFalseValue);
         console.error(`Invalid switch value "${value}".`)
         value = SwitchTrueValue;
     }
@@ -224,10 +249,6 @@ function getViewTransitionSetting(value: string | null) {
     window.useViewTransitions = value === SwitchTrueValue;
     return sw;
 }
-
-const SwitchTrueValue = "1";
-const SwitchFalseValue = "0";
-type SwitchValue = typeof SwitchTrueValue | typeof SwitchFalseValue;
 
 function getSwitch(label: string, value: SwitchValue) {
     const sw = Switch.create<SwitchValue>(label, {boolValues: {true: SwitchTrueValue, false: SwitchFalseValue}});
@@ -310,7 +331,7 @@ function checkPagesNextButton(): void {
 
 /***************************************** GAME *******************************/
 function startGame() {
-    GAME?.cleanup();
+    GAME?.remove();
     GAME = DSM.getGame(GENERIC_GAME_SETTINGS.getValues());
     GAME.onFinish.push(() => setPlaying(false));
 

@@ -8,12 +8,11 @@ import QuizDealer from "../quiz/QuizDealer";
 import {
     ElementAttrs,
     input,
-    grabNodes,
-    selectNode,
-    DOMFactory
+    DOMFactory, GrabbedNodes, div
 } from "../utils/dom";
 import QuizItem, {QuizAnswers} from "../quiz/QuizItem";
 import {ObservableWithNode} from "../utils/classes/Observable";
+import Ribbon from "../utils/classes/Ribbon";
 
 
 export interface CardDisplayMeta {
@@ -29,30 +28,66 @@ export interface GameConfig {
     seed: string;
 }
 
-const GameContainer = grabNodes(selectNode<HTMLDivElement>(document, "#game-container"), {
-    progressBar: "#progress-bar",
-    cards: "#game-cards",
-    mainCardContainer: "#game-main-card-container",
-    referenceCards: "#game-reference-cards",
-    inputsEvalsContainer: "#game-inputs-evals-container",
-    inputs: "#game-inputs",
-    evals: "#game-evals",
-    footer: "#game-footer",
-    submitButton: "#item-submit-button",
-    nextButton: "#item-next-button",
-    cardSettings: "#card-settings",
-});
-const GC = GameContainer;
+const GameGrabNodes = {
+    container: ["div"],
+    progressBar: ["div", ".game-progress-bar"],
+    cards: ["div", ".game-cards"],
+    mainCardContainer: ["div", ".game-main-card-container"],
+    referenceCards: ["div", ".game-reference-cards"],
+    inputsEvalsContainer: ["div", ".game-inputs-evals-container"],
+    inputs: ["div", ".game-inputs"],
+    evals: ["div", ".game-evals"],
+    footer: ["div", ".game-footer"],
+    submitButton: ["button", ".game-submit-button"],
+    nextButton: ["button", ".game-next-button"]
+} as const;
+
+const gameContainerFactory = DOMFactory(
+    `<div class="game-container">
+    <div class="game-progress-bar"></div>
+
+    <div class="game-cards">
+        <div class="game-main-card-container"></div>
+        <div class="game-reference-cards"></div>
+    </div>
+
+    <div class="game-inputs-evals-container">
+        <div class="game-inputs"></div>
+        <div class="game-evals"></div>
+    </div>
+
+    <div class="game-footer">
+        <button type="submit" class="button-accent game-submit-button">Submit</button>
+        <button type="button" class="button-accent game-next-button">Next</button>
+    </div>
+</div>`,
+    GameGrabNodes
+);
+
 
 export default class Game<T, A extends QuizAnswers> {
+    readonly nodes: GrabbedNodes<typeof GameGrabNodes>;
+    readonly node: HTMLDivElement;
     readonly dealer: QuizDealer<QuizItem<T, A>>;
     readonly cardFactory: CardFactory<QuizItem<T, A>, any>;
     readonly onFinish: FunctionSet<() => any>;
     readonly cardDisplayMeta: CardDisplayMeta;
-    readonly cardSettings: SettingsCallbackPair<any[]>[];
     readonly mainCard: Card;
 
-    config: GameConfig;
+    settings?: {
+        ribbon: Ribbon,
+        container: HTMLDivElement,
+        pairs: SettingsCallbackPair<any[]>[];
+    }
+
+    readonly listeners: {
+        submit: () => void,
+        next: () => void,
+        keydown: (event: KeyboardEvent) => void,
+        input: (event: Event) => void
+    }
+
+    readonly config: GameConfig;
 
     private reference?: {
         items: QuizItem<T, any>[];
@@ -68,6 +103,8 @@ export default class Game<T, A extends QuizAnswers> {
     }
 
     constructor(dealer: QuizDealer<QuizItem<T, A>>, cardFactory: CardFactory<QuizItem<T, A>, any>, config?: Partial<GameConfig>) {
+        this.nodes = gameContainerFactory();
+        this.node = this.nodes.container;
         this.dealer = dealer;
         this.cardFactory = new CardFactory(cardFactory, {
             setup: card => {
@@ -81,18 +118,44 @@ export default class Game<T, A extends QuizAnswers> {
         this.updateProgressBar();
         this.config = Object.assign({keepKeyboardOpen: false, fastMode: false, seed: ""}, config ?? {});
 
-        this.cardSettings = [];
-        GC.cardSettings.replaceChildren();
-
         this.mainCard = this.cardFactory.createCard();
-        GC.mainCardContainer.replaceChildren(this.mainCard.node);
+        this.nodes.mainCardContainer.append(this.mainCard.node);
 
-        this.onInputKeypress = this.onInputKeypress.bind(this);
-        this.fastModeOnInput = this.fastModeOnInput.bind(this);
+        this.listeners = {
+            keydown: this.onInputKeydown.bind(this),
+            input: this.fastModeOnInput.bind(this),
+            next: () => this.transition(() => this.newRound()),
+            submit: () => this.transition(() => this.submitRound())
+        };
 
-        GC.nextButton.textContent = "Next";
-        GC.nextButton.addEventListener("click", () => this.transition(() => this.newRound()));
-        GC.submitButton.addEventListener("click", () => this.transition(() => this.submitRound()));
+        this.setupEventListeners();
+    }
+
+    getSettings() {
+        const container = div(".card-settings");
+        const ribbon = new Ribbon({closable: true});
+        ribbon.node.classList.add("card-settings-ribbon");
+        ribbon.addContent("", container);
+        this.nodes.container.append(ribbon.node);
+        return {
+            pairs: [],
+            ribbon,
+            container
+        };
+    }
+
+    setupEventListeners() {
+        this.nodes.nextButton.addEventListener("click", this.listeners.next);
+        this.nodes.submitButton.addEventListener("click", this.listeners.submit);
+        this.nodes.inputs.addEventListener("keydown", this.listeners.keydown);
+        this.nodes.inputs.addEventListener("input", this.listeners.input);
+    }
+
+    removeEventListeners() {
+        this.nodes.nextButton.removeEventListener("click", this.listeners.next);
+        this.nodes.submitButton.removeEventListener("click", this.listeners.submit);
+        this.nodes.inputs.removeEventListener("keydown", this.listeners.keydown);
+        this.nodes.inputs.removeEventListener("input", this.listeners.input);
     }
 
     static genericSettings(values?: Partial<GameConfig>): SettingCollection<GameConfig> {
@@ -106,18 +169,20 @@ export default class Game<T, A extends QuizAnswers> {
     }
 
     allCards(): Card[] {
-        return [this.mainCard].concat(this.reference?.cards ?? []);
+        return this.reference ? [this.mainCard, ...this.reference.cards] : [this.mainCard];
     }
 
     addCardSettings<P extends any[]>(settings: ObservableWithNode<P>, applySettings: (card: Card, ...args: P) => void): void {
-        this.cardSettings.push([settings, applySettings]);
+        if (!this.settings) this.settings = this.getSettings();
+
+        this.settings.pairs.push([settings, applySettings]);
         settings.observers.push((...args) => {
             for (const card of this.allCards()) {
                 applySettings(card, ...args);
             }
         });
 
-        GC.cardSettings.append(settings.node);
+        this.settings.container.append(settings.node);
 
         for (const card of this.allCards()) {
             this.applyCardSettings(card);
@@ -125,8 +190,10 @@ export default class Game<T, A extends QuizAnswers> {
     }
 
     applyCardSettings(card: Card): void {
-        for (const [settings, applySettings] of this.cardSettings) {
-            applySettings(card, ...settings.observerArgs());
+        if (this.settings) {
+            for (const [settings, applySettings] of this.settings.pairs) {
+                applySettings(card, ...settings.observerArgs());
+            }
         }
     }
 
@@ -152,27 +219,18 @@ export default class Game<T, A extends QuizAnswers> {
     }
 
     setupAnswerElements(data: (GameInputConfig & {key: keyof A})[], config?: GameInputConfig) {
-        const inputsContainer = document.getElementById('game-inputs') as HTMLDivElement;
-        inputsContainer.replaceChildren();
-        const evalsContainer = document.getElementById('game-evals') as HTMLDivElement;
-        evalsContainer.replaceChildren();
-
         const keys = data.map(attrs => attrs.key);
         const inputs = data.map(attrs => createGameInput(Object.assign({}, config, attrs)));
         const evals = data.map(() => createEvalElement());
 
-        inputs.forEach(input => {
-            input.addEventListener("keydown", this.onInputKeypress);
-            input.addEventListener("input", this.fastModeOnInput);
-            inputsContainer.append(input);
-        });
-        evalsContainer.append(...evals.map(e => e.container));
+        this.nodes.inputs.append(...inputs);
+        this.nodes.evals.append(...evals.map(e => e.container));
 
         this.elements = {inputs, evals, keys, shown: "inputs"};
         this.show("inputs");
     }
 
-    onInputKeypress(event: KeyboardEvent): void {
+    onInputKeydown(event: KeyboardEvent): void {
         if (!this.elements) throw new Error("Answer elements not set up yet.");
         const input = event.target;
         if (!(input instanceof HTMLInputElement)) return;
@@ -206,32 +264,21 @@ export default class Game<T, A extends QuizAnswers> {
         }
     }
 
-    putSettings(settings: Partial<GameConfig>) {
-        Object.assign(this.config, settings);
-        if (settings.seed) this.seed(settings.seed);
-    }
-
-    seed(seed: string): void {
-        this.dealer.rng.seed(seed);
-    }
-
-    cleanup() {
+    remove() {
         this.mainCard.clear();
         this.updateProgressBar(0);
-
-        GC.inputs.removeEventListener("keypress", this.onInputKeypress);
-        GC.inputs.replaceChildren();
-        GC.evals.replaceChildren();
+        this.removeEventListeners();
+        this.node.remove();
     }
 
     finish() {
-        setTimeout(() => this.cleanup(), 100);
+        setTimeout(() => this.remove(), 100);
         this.onFinish.call();
         this.teardown();
     }
 
     teardown() {
-        GC.cardSettings.replaceChildren();
+        if (this.settings) this.settings.pairs.forEach(s => s[0].teardown());
     }
 
     allInputsCorrect() {
@@ -269,7 +316,7 @@ export default class Game<T, A extends QuizAnswers> {
             if (this.reference && !passes(grade)) {
                 const referenceItems = this.getReferenceItems(key, guess);
                 this.reference.cards = this.getReferenceCards(referenceItems, key);
-                GC.referenceCards.append(...this.reference.cards.map(card => card.node));
+                this.nodes.referenceCards.append(...this.reference.cards.map(card => card.node));
 
                 // // doesn't make sense, cause the referenceItems are not the same as the game items.
                 // for (const item of referenceItems) {
@@ -278,7 +325,7 @@ export default class Game<T, A extends QuizAnswers> {
             }
         }
 
-        if (this.reference && this.reference.cards.length > 0) DOMUtils.show([GC.referenceCards]);
+        if (this.reference && this.reference.cards.length > 0) DOMUtils.show(this.nodes.referenceCards);
 
         this.submitScore(avg(grades))
         this.show("evals");
@@ -294,7 +341,7 @@ export default class Game<T, A extends QuizAnswers> {
 
         this.updateProgressBar();
         if (this.dealer.isEmpty()) {
-            GC.nextButton.textContent = "Finish";
+            this.nodes.nextButton.textContent = "Finish";
         }
     }
 
@@ -351,26 +398,26 @@ export default class Game<T, A extends QuizAnswers> {
 
         DOMUtils.toggleShown(
             which === "inputs",
-            [GC.submitButton],
-            [GC.nextButton]
+            this.nodes.submitButton,
+            this.nodes.nextButton
         );
 
         if (which === "inputs") {
             this.mainCard.hideLabels();
-            GC.referenceCards.replaceChildren();
-            DOMUtils.hide([GC.referenceCards, GC.evals]);
-            DOMUtils.show([GC.inputs], "visibility");
+            this.nodes.referenceCards.replaceChildren();
+            DOMUtils.hide([this.nodes.referenceCards, this.nodes.evals]);
+            DOMUtils.show(this.nodes.inputs, "visibility");
 
             this.focus();
         } else {
             this.mainCard.showLabels();
 
-            DOMUtils.show([GC.evals]);
+            DOMUtils.show(this.nodes.evals);
             if (this.config.keepKeyboardOpen) {
                 this.elements.inputs[this.elements.inputs.length - 1].focus();
             } else {
-                DOMUtils.hide([GC.inputs], "visibility");
-                GC.nextButton.focus();
+                DOMUtils.hide(this.nodes.inputs, "visibility");
+                this.nodes.nextButton.focus();
             }
         }
 
@@ -379,7 +426,7 @@ export default class Game<T, A extends QuizAnswers> {
 
     updateProgressBar(value?: number): void {
         value ??= this.dealer.progress();
-        GC.progressBar.style.setProperty("--progress", value.toString());
+        this.nodes.progressBar.style.setProperty("--progress", value.toString());
     }
 
     newRound() {
