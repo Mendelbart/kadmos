@@ -7,6 +7,13 @@
     "type": "svg",
     "template": {"$component": "asl/template"}
   },
+  "selector": {
+    "style": {
+      "buttonWidth": 1.125,
+      "symbolSize": 1.75,
+      "labelGap": 2
+    }
+  },
   "subsets": {
     "letters": {
       "label": "Letters",
@@ -26,11 +33,6 @@
       "selector": {
         "label": {
           "property": "letter"
-        },
-        "style": {
-          "buttonWidth": "2.5rem",
-          "symbolSize": 2,
-          "labelGap": 2
         }
       }
     },
@@ -52,11 +54,6 @@
       "selector": {
         "label": {
           "property": "digit"
-        },
-        "style": {
-          "buttonWidth": "2.5rem",
-          "symbolSize": 2,
-          "labelGap": 2
         },
         "blocks": [{
           "dimensions": [2, 5],

@@ -2,25 +2,25 @@ import {DOMUtils, Observable} from '../utils';
 import Game, {GameConfig} from "../game/Game";
 import QuizDealer from "../quiz/QuizDealer";
 import {Card, CardFactory} from "../quiz/card";
-import {RadioButtonGroup, SettingCollection, Slider} from "../settings";
+import {SettingCollection, Slider} from "../settings";
 import {LetterType, NodeableFromLetterKey} from "../letter/utils";
 import {Dataset, DatasetGameSettings} from "./Dataset";
 import DatasetSubset, { DatasetSelector, SelectorSettings} from "./DatasetSubset";
 import QuizItem from "../quiz/QuizItem";
-import {SettingsValues} from "../settings/SettingCollection";
+import {ObservableSetting, SettingsValues} from "../settings/SettingCollection";
 
 
 export interface DatasetMediatorSettings {
-    selector?: SettingCollection<SelectorSettings>,
-    game?: SettingCollection<DatasetGameSettings>,
-    subset?: RadioButtonGroup,
-    combine?: {method: RadioButtonGroup, keys: SettingCollection<number[]>}
+    selector: SettingCollection<SelectorSettings>,
+    game: SettingCollection<DatasetGameSettings>,
+    subset: ObservableSetting<string>,
+    combine?: {method: ObservableSetting<string>, keys: SettingCollection<number[]>}
 }
 
 export interface DatasetSettingsValues {
-    selector?: SelectorSettings & {checked: boolean[]},
-    game?: DatasetGameSettings,
-    subset?: string,
+    selector: SelectorSettings & {checked: boolean[]},
+    game: DatasetGameSettings,
+    subset: string,
     combine?: {
         method: string,
         keys: number[]
@@ -49,43 +49,35 @@ export interface FontSettings {
 export default class DatasetMediator<K extends LetterType> extends Observable<[DatasetSettingsValues]> {
     dataset: Dataset<K>;
     subset: DatasetSubset<K>;
+    selector: DatasetSelector<K>;
+
     settings: DatasetMediatorSettings;
     settingsCache: DatasetCache;
     subsetCache: SubsetCache;
-    selector: DatasetSelector<K>;
 
     /**
      * @param {Dataset} dataset
      * @param [settingsCache]
      * @param [settingsValues]
      */
-    constructor(dataset: Dataset<K>, settingsCache?: DatasetCache | null, settingsValues: DatasetSettingsValues = {}) {
+    constructor(dataset: Dataset<K>, settingsCache?: DatasetCache | null, settingsValues: Partial<DatasetSettingsValues> = {}) {
         super();
         this.dataset = dataset;
-
-        this.settings = {};
-        const subsetKey = this.dataset.getSubset(settingsValues.subset).key;
-        this.settingsCache = this.updateCacheToValues(settingsCache, settingsValues, subsetKey);
+        this.subset = this.dataset.getSubset(settingsValues.subset);
+        this.selector = this.subset.createSelector();
+        this.settingsCache = this.updateCacheToValues(settingsCache, settingsValues, this.subset.key);
+        this.subsetCache = this.getSubsetCache();
+        this.settings = this.getSettings();
 
         this.updateSubset = this.updateSubset.bind(this);
         this.applyCombineSettings = this.applyCombineSettings.bind(this);
         this.updateCache = this.updateCache.bind(this);
 
-        if (this.dataset.hasSetting("subset")) {
-            this.settings.subset = this.dataset.subsetSetting(subsetKey);
-            this.settings.subset.observers.push(this.updateSubset, this.callObservers);
-        }
-
-        this.subset = this.getSubset();
-        this.subsetCache = this.getSubsetCache();
+        this.setupSelector();
+        this.setupObservers();
 
         this.updateCache();
         this.observers.push(this.updateCache);
-
-        this.selector = this.subset.createSelector();
-        this.setupSettings();
-        this.setupSelector();
-        this.setupObservers();
     }
 
     getSubset() {
@@ -100,12 +92,12 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         this.subset = this.getSubset();
         this.subsetCache = this.getSubsetCache();
 
-        this.setupSettings();
+        this.updateSettings();
         this.updateSelector();
         this.setupObservers();
     }
 
-    updateCacheToValues(cache?: DatasetCache | null, values: DatasetSettingsValues = {}, subsetKey?: string): DatasetCache {
+    updateCacheToValues(cache?: DatasetCache | null, values: Partial<DatasetSettingsValues> = {}, subsetKey?: string): DatasetCache {
         subsetKey ??= this.subset.key;
         cache ??= {};
         const subCache = cache[subsetKey] ??= {};
@@ -137,17 +129,27 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         this.updateCacheToValues(this.settingsCache, this.getSettingsValues());
     }
 
-    replaceSetting<T extends SettingsValues>(newSC: SettingCollection<T>, oldSC?: SettingCollection<T>) {
+    replaceSC<T extends SettingsValues>(newSC: SettingCollection<T>, oldSC?: SettingCollection<T>) {
         if (oldSC) oldSC.replaceWith(newSC);
         return newSC;
     }
+    
+    getSettings(): DatasetMediatorSettings {
+        const selectorSettings = this.subset.getSelectorSettings(this.subsetCache.selector);
+        selectorSettings.node.classList.add("inline");
+        return {
+            subset: this.dataset.subsetSetting(this.subset.key),
+            selector: selectorSettings,
+            game: this.dataset.getGameSettings(this.subset.key, this.subsetCache.game)
+        };
+    }
 
-    setupSettings() {
-        this.settings.selector = this.replaceSetting(
+    updateSettings() {
+        this.settings.selector = this.replaceSC(
             this.subset.getSelectorSettings(this.subsetCache.selector),
             this.settings.selector
         );
-        this.settings.game = this.replaceSetting(
+        this.settings.game = this.replaceSC(
             this.dataset.getGameSettings(this.subset.key, this.subsetCache.game),
             this.settings.game
         );
@@ -177,7 +179,6 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
 
     setupCombineSettings() {
         this.removeCombineSettings();
-        if (!this.settings.selector) throw new Error("Selector setting must be set up first.");
 
         const form = this.currentForms()[0];
         if (!form || !this.subset.hasCombine(form)) return;
@@ -221,7 +222,8 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         const combineConfig = this.getCombineConfig();
         const form = this.currentForms()[0];
 
-        if (this.selector) this.selector.updateButtonContents((content, item) => {
+        this.selector.updateButtonContents((content, item) => {
+            if (!item.hasForm(form)) return;
             this.findFormElement(content, form).replaceChildren(
                 item.getForm(form).getNode({combine: combineConfig})
             );
@@ -260,7 +262,7 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
     }
 
     setupObservers() {
-        if (!this.settings.selector || !this.settings.game) throw new Error("Settings not set up yet.");
+        this.settings.subset.observers.push(this.updateSubset, this.callObservers);
         this.settings.selector.observers.push((values, changed) => DOMUtils.transition(
             () => {
                 this.applySelectorSettings(values, changed);
@@ -317,20 +319,15 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
     }
 
     getSettingsValues(): DatasetSettingsValues {
-        const values: DatasetSettingsValues = {};
-
-        if (this.subset) values.subset = this.subset.key;
-        if (this.settings.selector) {
-            values.selector = {
+        return {
+            subset: this.subset.key,
+            selector: {
                 ...this.settings.selector.getValues(),
                 checked: this.selector.getChecked({includeDisabled: true})
-            }
-        }
-
-        if (this.settings.game?.size) values.game = this.settings.game.getValues();
-        values.combine = this.getCombineSettingsValues();
-
-        return values;
+            },
+            game: this.settings.game.getValues(),
+            combine: this.getCombineSettingsValues()
+        };
     }
 
     currentForms(): string[] {
@@ -339,7 +336,6 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
 
     readSelectorSettings() {
         this.applySelectorSettings(this.settings.selector?.getValues() ?? {});
-        this.applyCombineSettings();
     }
 
     applySelectorSettings({forms, variant}: Partial<SelectorSettings>, changed?: string) {
@@ -374,6 +370,7 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         );
 
         this.setupCombineSettings();
+        this.applyCombineSettings();
     }
 
     getActiveForms(): string[] {

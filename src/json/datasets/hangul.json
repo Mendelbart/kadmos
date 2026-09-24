@@ -58,7 +58,7 @@
           "property": "name"
         },
         "style": {
-          "buttonWidth": "3rem"
+          "buttonWidth": 2
         },
         "blocks": [
           {"letters": {"i1": "1:10"}},

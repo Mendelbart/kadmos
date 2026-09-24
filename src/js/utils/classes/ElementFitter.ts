@@ -228,7 +228,7 @@ function parseScale(value: string) {
 }
 
 function getScale(elementSize: number, containerSize: number, grow: boolean = false): number | null {
-    if (elementSize === 0 || isNaN(elementSize) || isNaN(containerSize)) return null;
+    if (elementSize === 0 || containerSize === 0 || isNaN(elementSize) || isNaN(containerSize)) return null;
 
     const scale = containerSize / elementSize;
 

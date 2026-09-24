@@ -118,7 +118,8 @@
           "columnLabels": ["velar", "palatal", "retro­flex", "dental", "labial"]
         }],
         "style": {
-          "buttonWidth": "2.375rem"
+          "buttonMaxWidth": 2,
+          "buttonMinWidth": 1.5
         }
       }
     },

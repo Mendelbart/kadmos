@@ -64,7 +64,7 @@ function getGenericGameSettings(): SettingCollection<GameConfig> {
         try {
             settings = Game.genericSettings(JSON.parse(stored));
         } catch (e) {
-            console.error("Error occured during generic game settings creation:");
+            console.error("Error occurred during generic game settings creation:");
             console.error(e);
             settings = Game.genericSettings();
         }
@@ -122,7 +122,7 @@ function setupDatasetSelect() {
                 return selectDataset(dataset);
             });
         } catch (e) {
-            console.error(`Error occured fetching dataset with key ${datasetSelect.value}`);
+            console.error(`Error occurred fetching dataset with key ${datasetSelect.value}`);
             disableCurrentDatasetOption();
         }
     });
@@ -303,7 +303,7 @@ function setupDSM() {
     try {
         DSM = new DatasetMediator(DATASET, cache, {subset: DOMUtils.getSearchParam("subset") ?? subset});
     } catch (e) {
-        console.error("Error occured during DSM construction, probably because of invalid cache.");
+        console.error("Error occurred during DSM construction, probably because of invalid cache.");
         console.error(e);
         DSM = new DatasetMediator(DATASET);
     }
@@ -416,7 +416,7 @@ function getStoredSettings(): [undefined, undefined] | [string, DatasetCache] {
 
         return [subsetKey, decodeCache(values)];
     } catch (e) {
-        console.warn("Error occured during local storage retrieval.");
+        console.warn("Error occurred during local storage retrieval.");
         console.error(e);
         return [undefined, undefined];
     }
