@@ -109,7 +109,13 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
             delete style.buttonWidth;
         }
 
-        for (const [prop, value] of Object.entries(style) as [Exclude<keyof SchemaSelectorBlockStyle, "buttonWidth">, string | number][]) {
+        for (let [prop, value] of Object.entries(style) as [Exclude<keyof SchemaSelectorBlockStyle, "buttonWidth">, string | number][]) {
+            if (prop === "buttonMinWidth" || prop === "buttonMaxWidth") {
+                if (typeof value === "number") {
+                    value = `calc(var(--base-symbol-size) * ${value})`;
+                }
+            }
+
             this.node.style.setProperty(STYLE_PROPERTIES[prop], value.toString());
         }
     }

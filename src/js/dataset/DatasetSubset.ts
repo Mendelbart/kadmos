@@ -440,16 +440,14 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
     }
 
     // =================================== QUIZ ITEMS ===================================
-    getAnswerFactories() {
-        return ObjectUtils.map(this.properties, p => p.factory);
+    getQuizAnswers(item: DatasetItem<NodeableFromLetterKey<K>>, properties: string[], params: DatasetAnswerParams) {
+        return ObjectUtils.fromKeys(properties, p => this.properties[p].factory(item.properties[p].get(params)));
     }
 
     getQuizItems(items: DatasetItem<NodeableFromLetterKey<K>>[], properties: string[], forms: string[], params: DatasetAnswerParams) {
-        const factories = this.getAnswerFactories();
-
         return items.flatMap(item => {
             const availableForms = item.getAvailableForms(forms);
-            const answers = item.getQuizAnswers(properties, factories, params);
+            const answers = this.getQuizAnswers(item, properties, params);
             return availableForms.map(
                 form => new QuizItem(item.getForm(form), answers)
             );
@@ -457,13 +455,11 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
     }
 
     getReferenceItems(properties: string[], forms: string[], params: DatasetAnswerParams) {
-        const factories = this.getAnswerFactories();
-
         if (!this.forms.exclusive) forms = Object.keys(this.forms.data);
 
         return this.items.map(item => new QuizItem(
             item.combineForms(forms),
-            item.getQuizAnswers(properties, factories, params)
+            this.getQuizAnswers(item, properties, params)
         ));
     }
 
@@ -516,10 +512,6 @@ export class DatasetItem<N extends Nodeable<any>> {
         this.properties = properties;
     }
 
-    getQuizAnswers(properties: string[], factories: Record<string, (value: string) => QuizAnswer>, params: DatasetAnswerParams): Record<string, QuizAnswer> {
-        return ObjectUtils.fromKeys(properties, prop => factories[prop](this.properties[prop].get(params)));
-    }
-
     /**
      * Returns the form keys that this letter possesses, optionally constrained to elements of the argument `forms`.
      */
@@ -528,7 +520,7 @@ export class DatasetItem<N extends Nodeable<any>> {
     }
 
     getForm(form: string): N {
-        if (!this.forms[form]) throw new Error(`Item doesn't have form key ${form}.`);
+        if (this.forms[form] == null) throw new Error(`Item doesn't have form key ${form}.`);
         return this.forms[form];
     }
 

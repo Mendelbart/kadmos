@@ -24,7 +24,7 @@
             "type": "string",
             "properties": {
               "maxDist": 1,
-              "substitutions": [{"pattern": "[ʾʿ]*", "repl": [""]}]
+              "substitutions": [{"pattern": "[ʾʿ]+", "repl": [""]}]
             }
           },
           "active": true

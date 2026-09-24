@@ -24,11 +24,17 @@ $selectorBorderRadius: .25rem;
   gap: 1.5rem;
   width: 100%;
 
+  --symbol-min-width: auto;
+  --button-min-width: 0;
+  --button-max-width: 1fr;
+
   &:not(:first-child) {
     margin-top: .375rem;
   }
 
   .selector-block {
+    --base-symbol-size: calc(var(--symbol-size, 1) * 1.5rem);
+
     gap: .25rem;
     align-self: center;
     max-width: 100%;
@@ -38,10 +44,6 @@ $selectorBorderRadius: .25rem;
     --clr-grp-button-checked: hsla(0, 0%, 100%, .1);
     --clr-grp-button-checked-border: hsla(0, 0%, 100%, .45);
     --clr-grp-button-border: hsla(0, 0%, 100%, .25);
-
-    --symbol-min-width: auto;
-    --button-min-width: 0;
-    --button-max-width: 1fr;
 
     &.range-selecting, &.disable-touch-action {
       touch-action: none;
@@ -80,7 +82,7 @@ $selectorBorderRadius: .25rem;
         border-radius: $selectorBorderRadius;
         padding: .1rem .2rem;
         cursor: pointer;
-        font-size: .8rem;
+        font-size: .875rem;
         transition: background 75ms;
       }
 
@@ -146,7 +148,7 @@ $selectorBorderRadius: .25rem;
     font-weight: 600;
     transform-origin: center;
 
-    --base-font-size: calc(var(--symbol-size, 1) * 1.375rem);
+    --base-font-size: var(--base-symbol-size);
   }
 
   .letter {
@@ -158,19 +160,9 @@ $selectorBorderRadius: .25rem;
 
   .selector-button-label {
     font-weight: 400;
-    font-size: .8rem;
+    font-size: .875rem;
     padding-inline: .3em;
     pointer-events: none;
     text-align: center;
-  }
-
-  // Gap between second and third main group
-  &[data-dataset="elements"] {
-    .selector-block[data-block-index="0"] {
-      --gridTemplateColumns:
-              repeat(2, minmax(var(--button-min-width), var(--button-max-width)))
-              0rem
-              repeat(6, minmax(var(--button-min-width), var(--button-max-width)));
-    }
   }
 }

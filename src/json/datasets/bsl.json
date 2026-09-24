@@ -28,7 +28,7 @@
           "property": "letter"
         },
         "style": {
-          "buttonWidth": "3.5rem",
+          "buttonWidth": 1.625,
           "symbolSize": 1.5,
           "labelGap": 2
         }

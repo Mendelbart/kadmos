@@ -28,7 +28,7 @@
           "config": {
             "type": "string",
             "properties": {
-              "substitutions": [{"pattern": "[ʻʼ']*", "repl": [""]}]
+              "substitutions": [{"pattern": "[ʻʼ']+", "repl": [""]}]
             }
           },
           "active": true},
@@ -43,9 +43,18 @@
         }
       },
       "selector": {
-        "font": {"key": "naskh", "params": {"weight": 650, "scale": 1.1}},
+        "font": {
+          "key": "naskh",
+          "params": {
+            "weight": 650,
+            "scale": 1.1
+          }
+        },
         "label": {"property": "name"},
-        "style": {"buttonWidth": "4.8ch", "labelGap": 2.5}
+        "style": {
+          "buttonWidth": 1.75,
+          "labelGap": 2.5
+        }
       },
       "forms": {
         "label": "Form",

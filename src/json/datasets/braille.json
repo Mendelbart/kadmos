@@ -7,6 +7,11 @@
   "letterConfig": {
     "type": "braille"
   },
+  "selector": {
+    "style": {
+      "buttonWidth": "2.25rem"
+    }
+  },
   "subsets": {
     "letters": {
       "label": "Letters",
@@ -53,9 +58,6 @@
       "selector": {
         "label": {
           "property": "letter"
-        },
-        "style": {
-          "buttonWidth": "2.25rem"
         }
       }
     },
@@ -88,9 +90,6 @@
       "selector": {
         "label": {
           "property": "digit"
-        },
-        "style": {
-          "buttonWidth": "2.25rem"
         },
         "blocks": [{
           "dimensions": [2, 5],

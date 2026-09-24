@@ -39,7 +39,7 @@
       "selector": {
         "font": {"key": "serif"},
         "label": {"property": "name"},
-        "style": {"buttonWidth": "5ch"}
+        "style": {"buttonWidth": 2.125}
       },
       "forms": {
         "label": "Forms",

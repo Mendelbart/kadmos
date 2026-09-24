@@ -147,15 +147,15 @@
       "x-format": "grid",
       "properties": {
         "buttonWidth": {
-          "type": "string",
+          "type": ["string", "number"],
           "description": "Equivalent to setting buttonMinWidth and buttonMaxWidth to the same value."
         },
         "buttonMinWidth": {
-          "type": "string",
+          "type": ["string", "number"],
           "default": "0"
         },
         "buttonMaxWidth": {
-          "type": "string",
+          "type": ["string", "number"],
           "default": "1fr"
         },
         "symbolSize": {
@@ -1013,6 +1013,13 @@
       },
       "required": ["methods"],
       "additionalProperties": false
+    },
+    "selector": {
+      "x-interface": "Global Selector Config",
+      "type": "object",
+      "properties": {
+        "style": {"$ref": "#/$defs/blockStyle"}
+      }
     }
   },
   "required": ["metadata", "letterConfig", "subsets"],

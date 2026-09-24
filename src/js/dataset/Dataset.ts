@@ -7,7 +7,7 @@ import {BrailleString, StringCombiner, StringLetter} from "../letter";
 import {createButtonGroup} from "../settings/ButtonGroup";
 import {
     SchemaCombineConfig, SchemaCombineMethod, SchemaCombinePropertyConfig, SchemaCombineTemplates,
-    SchemaFonts, SchemaGameConfig,
+    SchemaFonts, SchemaGameConfig, SchemaGlobalSelectorConfig,
     SchemaKadmosDataset, SchemaLanguages,
     SchemaLetterConfig,
     SchemaMetadata, SchemaStringLetterConfig, SchemaSubset, SchemaSubsetVariants,
@@ -98,6 +98,7 @@ export class Dataset<K extends LetterType> {
     variants?: SchemaVariantsConfig;
     subsets: Record<string, DatasetSubset<K>>;
     combine?: DatasetCombineConfig;
+    selectorConfig?: SchemaGlobalSelectorConfig;
 
     constructor(data: SchemaKadmosDataset & {letterConfig: {type: K}}) {
         this.metadata = this.processMetadata(data.metadata);
@@ -113,6 +114,7 @@ export class Dataset<K extends LetterType> {
         this.variants = data.variants;
         this.subsets = this.processSubsets(data.subsets);
         if (data.combine) this.combine = this.processCombine(data.combine);
+        this.selectorConfig = data.selector;
     }
 
     static async fetch(key: string): Promise<Dataset<keyof LetterElementMap>> {
@@ -172,6 +174,10 @@ export class Dataset<K extends LetterType> {
         return ObjectUtils.map(subsets, (subset, key) => {
             return new DatasetSubset<K>(key, {
                 ...subset,
+                selector: {
+                    ...subset.selector,
+                    style: Object.assign({}, this.selectorConfig?.style, subset.selector.style)
+                },
                 variants: this.applyGlobalVariants(subset.variants, this.variants),
                 letterConfig: this.letterConfig
             });
@@ -226,7 +232,11 @@ export class Dataset<K extends LetterType> {
 
     // ============================= SETTINGS ============================
     subsetSetting(checked?: string) {
-        checked ??= Object.keys(this.subsets)[0];
+        const keys = Object.keys(this.subsets);
+        if (!checked || !keys.includes(checked)) checked = keys[0];
+
+        if (keys.length === 1) return new ConstantSetting(checked);
+
         return createButtonGroup(
             ObjectUtils.map(this.subsets, s => s.label),
             {
@@ -256,17 +266,6 @@ export class Dataset<K extends LetterType> {
                 type: "radio"
             }
         );
-    }
-
-    hasSetting(key: "variant" | "subset"): boolean {
-        switch (key) {
-            case "variant":
-                return this.variants != null;
-            case "subset":
-                return Object.keys(this.subsets).length > 1;
-            default:
-                throw new Error(`Invalid settings key ${key}.`);
-        }
     }
 
     getLang(subset?: string, variant?: string): string | undefined {

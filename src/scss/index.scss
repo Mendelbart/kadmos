@@ -36,9 +36,6 @@ $bodyMaxWidth: 26rem;
   --font-shift: 0;
   --letter-spacing: 0ch;
   --fg-color: var(--clr-text);
-
-  --braille-dot-size: .1875em;
-  --braille-small-dot-size: 0.33;
 }
 
 html {
@@ -465,7 +462,7 @@ dialog {
 }
 
 .image-nodeable, .svg-nodeable {
-  height: calc(var(--line-height, 1.2) * 1em);
+  height: 1lh;
 }
 
 

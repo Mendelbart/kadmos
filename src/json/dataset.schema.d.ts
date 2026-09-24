@@ -72,6 +72,7 @@ variants?: SchemaVariantsConfig
 game?: SchemaGameConfig
 subsets: SchemaSubsets
 combine?: SchemaCombineConfig
+selector?: SchemaGlobalSelectorConfig
 }
 export interface SchemaMetadata {
 /**
@@ -387,9 +388,9 @@ export interface SchemaSelectorBlockStyle {
 /**
  * Equivalent to setting buttonMinWidth and buttonMaxWidth to the same value.
  */
-buttonWidth?: string
-buttonMinWidth?: string
-buttonMaxWidth?: string
+buttonWidth?: (string | number)
+buttonMinWidth?: (string | number)
+buttonMaxWidth?: (string | number)
 symbolSize?: number
 symbolMinWidth?: string
 labelGap?: number
@@ -486,4 +487,7 @@ export interface SchemaCombinePropertyConfig {
 sources: (string | string[])
 templates?: SchemaCombineTemplates
 regExpFlags?: RegExpFlags
+}
+export interface SchemaGlobalSelectorConfig {
+style?: SchemaSelectorBlockStyle
 }
