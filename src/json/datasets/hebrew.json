@@ -62,9 +62,16 @@
         }
       },
       "selector": {
-        "font": {"key": "serif", "params": {"lineHeight": 1.35, "scale": 1.1}},
-        "label": {"property": "name", "splitFirst": true},
-        "style": {"buttonWidth": "5ch"}
+        "font": {
+          "key": "serif"
+        },
+        "label": {
+          "property": "name"
+        },
+        "style": {
+          "buttonWidth": 2,
+          "labelGap": 1.25
+        }
       },
       "items": {
         "properties": ["name", "num"],

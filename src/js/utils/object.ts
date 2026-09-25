@@ -37,7 +37,7 @@ export function withoutKeys<T extends object>(obj: T, ...keys: (keyof T)[]): Par
 
 export type OnlyKeys<T extends object, K> = {[P in keyof T]: P extends K ? T[P] : never};
 
-export function onlyKeys<T extends object, K extends keyof T>(obj: T, keys: Iterable<K>, warnOtherKeys = false): Partial<OnlyKeys<T, K>> {
+export function onlyKeys<T extends object, K extends keyof T>(obj: T, keys: Iterable<K>, warnOtherKeys = false): OnlyKeys<T, K> {
     const keySet = new Set<keyof T>(keys);
     const result: Partial<OnlyKeys<T, K>> = {};
     for (const [key, value] of Object.entries(obj) as Entries<T>) {
@@ -49,7 +49,7 @@ export function onlyKeys<T extends object, K extends keyof T>(obj: T, keys: Iter
         }
     }
 
-    return result;
+    return result as OnlyKeys<T, K>;
 }
 
 export function fromKeys<K extends string, V>(keys: K[], callback: (key: K, index: number) => V): Record<K, V> {

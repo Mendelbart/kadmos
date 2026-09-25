@@ -35,7 +35,7 @@ export interface QuizAnswerTypeMap {
 
 export type QuizAnswerRecipe = StringAnswerRecipe | NumberAnswerRecipe | ListAnswerRecipe;
 
-const factories: {[type in QuizAnswerRecipe["type"]]: (recipe: QuizAnswerRecipe & {type: type}) => (value: string) => QuizAnswerTypeMap[type]} = {
+const factories: {[K in keyof QuizAnswerTypeMap]: (recipe: QuizAnswerRecipe & {type: K}) => (value: string) => QuizAnswerTypeMap[K]} = {
     string: ({properties}: StringAnswerRecipe) => (value: string) => new StringAnswer(value, properties),
     number: ({properties}: NumberAnswerRecipe) => (value: string) => new NumberAnswer(value, properties),
     integer({properties}: NumberAnswerRecipe) {

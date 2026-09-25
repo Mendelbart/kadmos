@@ -14,13 +14,7 @@ export default class ConstantSetting<T> extends Observable<[T]> implements Setti
         this.node = hiddenInputFactory();
     }
 
-    setDisabled(disabled: boolean) {
-        return;
-    }
-
-    label(label: string) {
-        return;
-    }
+    label(_: string) {}
 
     remove(): void {
         this.node.remove();

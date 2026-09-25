@@ -6,7 +6,6 @@ import {ObservableSetting} from "./SettingCollection";
 export interface Setting<V> {
     value: V,
     node: HTMLElement,
-    setDisabled(disabled: boolean): void,
     label(label: string): void,
     remove(): void
 }
@@ -19,7 +18,7 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
     node: HTMLDivElement
     valueNode: T
 
-    constructor(node: HTMLElement) {
+    protected constructor(node: HTMLElement) {
         super();
 
         let valueNode;
@@ -47,7 +46,7 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
         throw new Error("Not implemented");
     }
 
-    set value(value: V) {
+    set value(_: V) {
         throw new Error("Not Implemented");
     }
 
@@ -57,10 +56,6 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
 
     observerArgs(): [V] {
         return [this.value];
-    }
-
-    setDisabled(disabled: boolean): void {
-        this.valueNode.disabled = disabled;
     }
 
     setId(data: string | { prefix: string } = {prefix: ""}): string {
@@ -101,6 +96,10 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
 }
 
 export default class ValueElement extends ValueElementBase<HTMLValueElementType, string> implements Setting<string> {
+    constructor(node: HTMLElement) {
+        super(node);
+    }
+
     get value(): string {
         return this.valueNode.value;
     }
@@ -138,10 +137,6 @@ export class TransformedSetting<V, T = string> extends Observable<[V]> implement
         this.setting.value = this.invTransform(value);
     }
 
-    setDisabled(disabled: boolean) {
-        this.setting.setDisabled(disabled);
-    }
-
     label(label: string) {
         this.setting.label(label);
     }
@@ -163,18 +158,6 @@ export function createInput(type: string, label?: string, attrs?: Record<string,
 }
 
 export type SelectConfig = SelectOptionsConfig & {id?: string, label?: string};
-export interface IndexSelectConfig {
-    selected?: number,
-    disabled?: number[],
-    groups?: {
-        label: string,
-        keys: string[]
-    }[],
-    id?: string,
-    label?: string
-}
-
-
 export function createSelect(data: Record<string, string>, options: SelectConfig = {}): ValueElement {
     const select = document.createElement("select");
     DOMUtils.setOptions(select, data, options);
