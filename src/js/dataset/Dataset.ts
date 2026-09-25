@@ -112,9 +112,9 @@ export class Dataset<K extends LetterType> {
 
         this.gameConfig = data.game ?? {};
         this.variants = data.variants;
+        this.selectorConfig = data.selector;
         this.subsets = this.processSubsets(data.subsets);
         if (data.combine) this.combine = this.processCombine(data.combine);
-        this.selectorConfig = data.selector;
     }
 
     static async fetch(key: string): Promise<Dataset<keyof LetterElementMap>> {
@@ -292,16 +292,16 @@ export class Dataset<K extends LetterType> {
     }
 
     combineMethodSetting(subset: string, form: string, checked?: string) {
-        if (!this.combine) throw new Error("Dataset doesn't have combine");
+        const methods = this.combine?.methods;
+        if (!methods) throw new Error("Dataset doesn't have combine");
 
         const keys = this.subsets[subset].combineMethods(form);
         if (!keys) throw new Error("Form doesn't use combine.");
 
+        if (keys.length === 1) return new ConstantSetting(keys[0]);
+
         return createButtonGroup(
-            ObjectUtils.map(
-                ObjectUtils.onlyKeys(this.combine.methods, keys),
-                (method, key) => method?.label ?? (key as string)
-            ),
+            ObjectUtils.fromKeys(keys, key => methods[key].label),
             {type: "radio", checked: checked ?? keys[0]}
         );
     }
