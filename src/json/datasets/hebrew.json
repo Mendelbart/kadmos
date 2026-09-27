@@ -17,18 +17,30 @@
       "params": {"lineHeight": 1.25}
     }
   },
-  "combine": {
-    "methods": {
-      "syllable": {
-        "label": "Syllable",
-        "subsets": ["letters", "vowels"],
-        "letterConfig": [
-          {"form": "normal"},
-          {"form": "default"}
-        ],
+  "games": {
+    "configs": {
+      "letters": {
+        "type": "single",
+        "subset": "letters",
+        "forms": {
+          "exclusive": false
+        },
         "properties": {
-          "name": {
-            "sources": ["name", "name"]
+          "exclusive": true
+        }
+      },
+      "vowels": {
+        "type": "single",
+        "subset": "vowels",
+        "forms": {
+          "data": {
+            "diacritic": {
+              "label": "Diacritic",
+              "displayConfig": {
+                "type": "diacritic",
+                "base": "א"
+              }
+            }
           }
         }
       }
@@ -39,26 +51,16 @@
       "label": "Letters",
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
             "type": "string",
-            "properties": {
-              "maxDist": 1
-            }
-          },
-          "active": true
+            "maxDist": 1
+          }
         },
         "num": {
-          "label": "Numeric Value",
           "config": {
-            "type": "integer"
+            "type": "number",
+            "integer": true
           }
-        }
-      },
-      "forms": {
-        "data": {
-          "normal": {"label": "Normal"},
-          "sofit": {"label": "Sofit"}
         }
       },
       "selector": {
@@ -74,6 +76,7 @@
         }
       },
       "items": {
+        "forms": ["normal", "sofit"],
         "properties": ["name", "num"],
         "data": [
           [["א"], ["aleph", "1"]],
@@ -105,20 +108,10 @@
       "label": "Vowels",
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
             "type": "string"
           }
         }
-      },
-      "forms": {
-        "data": {
-          "default": {
-            "label": "Default",
-            "combine": ["syllable"]
-          }
-        },
-        "exclusive": true
       },
       "selector": {
         "blocks": [{
@@ -139,6 +132,7 @@
         }
       },
       "items": {
+        "forms": ["diacritic"],
         "properties": ["name"],
         "data": [
           [["ָ"], ["kamatz"]],

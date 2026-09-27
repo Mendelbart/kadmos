@@ -5,12 +5,12 @@ import {SVGNodeable} from "./svg";
 
 export type LetterType = keyof LetterElementMap;
 export interface LetterElementMap {
-    string: [HTMLSpanElement, [StringLetterConfig]],
-    braille: [HTMLSpanElement, []],
-    image: [HTMLImageElement, []],
-    svg: [SVGElement, []]
+    string: HTMLSpanElement,
+    braille: HTMLSpanElement,
+    image: HTMLImageElement,
+    svg: SVGElement
 }
-export type NodeableFromLetterKey<K extends LetterType> = Nodeable<LetterElementMap[K][0], LetterElementMap[K][1]>;
+export type NodeableFromLetterKey<K extends LetterType> = Nodeable<LetterElementMap[K]>;
 
 
 export function createNodeable<K extends LetterType>(type: K, data: string): NodeableFromLetterKey<K>;

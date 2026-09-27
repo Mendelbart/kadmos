@@ -35,45 +35,31 @@
       },
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1
-              }
-            }
-          },
-          "active": true
+            "type": "string",
+            "maxDist": 1,
+            "list": [{}]
+          }
         },
-        "pron": {
-          "label": "Pronunciation",
+        "pronunciation": {
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string"
-            }
+            "type": "string",
+            "list": [{}]
           }
         },
         "meaning": {
-          "label": "Meaning",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1,
-                "substitutions": [
-                  {"pattern": "pear-tree", "repl": ["pear tree"]}
-                ]
-              }
-            }
+            "type": "string",
+            "list": [{}],
+            "maxDist": 1,
+            "gradeSubstitutions": [
+              ["pear-tree", ["pear tree"]]
+            ]
           }
         }
       },
       "items": {
-        "properties": ["name", "pron", "meaning"],
+        "properties": ["name", "pronunciation", "meaning"],
         "data": [
           [["f"], ["Fehu", "f", "cattle, wealth"]],
           [["u"], ["Uruz, Ur", "u", "aurochs, wild ox"]],

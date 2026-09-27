@@ -36,32 +36,21 @@
       },
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1,
-                "substitutions": [
-                  {"pattern": "[ðþ]", "repl": ["th"]},
-                  {"pattern":  "ʀ", "repl": ["r"]}
-                ]
-              }
-            }
-          },
-          "active": true
+            "type": "string",
+            "list": [{}],
+            "maxDist": 1,
+            "gradeSubstitutions": [
+              ["[ðþ]", ["th"]],
+              ["ʀ", ["r"]]
+            ]
+          }
         },
         "meaning": {
-          "label": "Meaning",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1
-              }
-            }
+            "type": "string",
+            "list": [{}],
+            "maxDist": 1
           }
         }
       },

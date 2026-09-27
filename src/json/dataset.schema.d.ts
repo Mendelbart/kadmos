@@ -19,22 +19,17 @@ data?: unknown[]
 })
 export type FontWeight = number
 export type SchemaLetterConfig = (SchemaStringLetterConfig | SchemaSVGLetterConfig | SchemaBrailleLetterConfig)
-export type SchemaQuizAnswerConfig = ({
-type: "string"
-properties?: SchemaStringAnswerConfig
+export type SchemaFormDisplayConfig = ({
+type: "normal"
 } | {
-type: ("number" | "integer")
-properties?: {
-/**
- * Maximum distance from value to pass.
- */
-maxDist?: number
-/**
- * "linear" (default), "log" or "log{BASE}" where BASE is the log base to use, default base is 10.
- */
-distanceMode?: string
-}
-} | SchemaListAnswerConfig)
+type: "diacritic"
+base: string
+overlay?: SchemaDiacriticOverlayConfig
+})
+export type SchemaQuizAnswerConfig = (SchemaStringAnswerConfig | SchemaNumberAnswerConfig)
+export type SchemaAnswerSubstitutions = [string, string[]]
+export type SchemaCombineTemplates = [(string | null)[], string][]
+export type RegExpFlags = string
 export type SchemaSelectorBlock = ((SchemaSelectorGridBlock | {
 style?: SchemaSelectorBlockStyle
 grid?: false
@@ -61,8 +56,6 @@ export type MatrixRanges = string
  */
 export type LetterRange = string
 export type SchemaItemsData = [unknown[], string[]][]
-export type SchemaCombineTemplates = [(string | null)[], string][]
-export type RegExpFlags = string
 
 export interface SchemaKadmosDataset {
 metadata: SchemaMetadata
@@ -70,6 +63,7 @@ letterConfig: SchemaLetterConfig
 languages?: SchemaLanguages
 variants?: SchemaVariantsConfig
 game?: SchemaGameConfig
+games?: SchemaGamesConfig
 subsets: SchemaSubsets
 combine?: SchemaCombineConfig
 selector?: SchemaGlobalSelectorConfig
@@ -275,6 +269,123 @@ fontParams?: {
 export interface SchemaGameConfig {
 defaultWeight?: FontWeight
 }
+export interface SchemaGamesConfig {
+configs?: {
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z]+$".
+ */
+[k: string]: SchemaSingleGameConfig | SchemaCombiningGameConfig
+}
+}
+export interface SchemaSingleGameConfig {
+type: "single"
+label?: string
+subset: string
+forms?: SchemaGameForms
+properties?: SchemaGameProperties
+}
+export interface SchemaGameForms {
+data?: {
+[k: string]: SchemaGameForm
+}
+/**
+ * Label of the button group setting.
+ */
+label?: string
+exclusive?: boolean
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z]+$".
+ */
+export interface SchemaGameForm {
+label: string
+key?: string
+displayConfig?: SchemaFormDisplayConfig
+/**
+ * If set, this form will not appear in the settings, but will follow the setting of the given key.
+ */
+groupWith?: string
+}
+export interface SchemaDiacriticOverlayConfig {
+position: ("left" | "right")
+pattern: string
+}
+export interface SchemaGameProperties {
+data?: {
+[k: string]: SchemaGameProperty
+}
+exclusive?: boolean
+label?: string
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z]+$".
+ */
+export interface SchemaGameProperty {
+label: string
+key?: string
+config?: SchemaQuizAnswerConfig
+}
+export interface SchemaStringAnswerConfig {
+type: "string"
+/**
+ * Maximum distance (optimal string alignment) to pass.
+ */
+maxDist?: number
+/**
+ * If value is n, add 1 to maxDist for every n characters of the word.
+ */
+maxDistMult?: number
+substitutions?: [string, string][]
+/**
+ * Search-replace pairs, using regular expressions, to describe equivalent substitutions that the answerer can use.
+ */
+gradeSubstitutions?: SchemaAnswerSubstitutions[]
+/**
+ * Whether the answer is case-sensitive.
+ */
+caseSensitive?: boolean
+list?: {
+/**
+ * RegExp to split input into list of answers.
+ */
+splitter?: string
+/**
+ * Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average.
+ */
+gradeMode?: ("one" | "all")
+}[]
+}
+export interface SchemaNumberAnswerConfig {
+type: "number"
+integer?: boolean
+/**
+ * Maximum distance from value to pass.
+ */
+maxDist?: number
+/**
+ * "linear" (default), "log" or "log{BASE}" where BASE is the log base to use, default base is 10.
+ */
+distanceMode?: string
+}
+export interface SchemaCombiningGameConfig {
+type: "combine"
+method: string
+properties: {
+[k: string]: SchemaCombinePropertyConfig
+}
+}
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-z]+$".
+ */
+export interface SchemaCombinePropertyConfig {
+sources: (string | string[])
+templates?: SchemaCombineTemplates
+regExpFlags?: RegExpFlags
+}
 export interface SchemaSubsets {
 [k: string]: SchemaSubset
 }
@@ -283,10 +394,9 @@ export interface SchemaSubsets {
  * via the `patternProperty` "^[a-z]+$".
  */
 export interface SchemaSubset {
-label: string
+label?: string
 properties: SchemaSubsetProperties
 selector: SchemaSelectorConfig
-forms?: SchemaFormsConfig
 items: SchemaSubsetItems
 variants?: SchemaSubsetVariants
 }
@@ -298,56 +408,10 @@ export interface SchemaSubsetProperties {
  * via the `patternProperty` "^[a-z]+$".
  */
 export interface SchemaSubsetPropertyParams {
-label: string
 config: SchemaQuizAnswerConfig
-active?: boolean
-}
-export interface SchemaStringAnswerConfig {
-/**
- * Maximum distance (optimal string alignment) to pass.
- */
-maxDist?: number
-/**
- * If value is n, add 1 to maxDist for every n characters of the word.
- */
-maxDistMult?: number
-/**
- * Search-replace entries, using regular expressions, to describe equivalent substitutions that the answerer can use.
- */
-substitutions?: {
-pattern: string
-repl: string[]
-}[]
-/**
- * If true, the substitutions need to be used if applicable.
- */
-forceSubstitutions?: boolean
-/**
- * Whether the answer is case-sensitive.
- */
-caseSensitive?: boolean
-/**
- * Used to ignore content in brackets or parentheses for grading. String of opening bracket characters, e.g. "([" to ignore (...) and [...].
- */
-ignoreBrackets?: string
-}
-export interface SchemaListAnswerConfig {
-type: "list"
-properties?: {
-/**
- * RegExp to split input into list of answers.
- */
-splitter?: string
-/**
- * Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average.
- */
-gradeMode?: ("one" | "all")
-}
-items: SchemaQuizAnswerConfig
 }
 export interface SchemaSelectorConfig {
 blocks?: SchemaSelectorBlock[]
-font?: SchemaFontReference
 /**
  * Settings for the label underneath letters in the selector. If not set, these won't appear.
  */
@@ -361,6 +425,7 @@ property: string
  */
 splitFirst?: boolean
 }
+font?: SchemaFontReference
 style?: SchemaSelectorBlockStyle
 /**
  * 'all', 'none' or 'block{INDEX}'.
@@ -410,36 +475,8 @@ i0?: string
 i1?: string
 [k: string]: LetterRange | undefined
 }
-export interface SchemaFormsConfig {
-/**
- * A form of letter, e.g. lower- or uppercase.
- */
-data: {
-[k: string]: SchemaFormConfig
-}
-/**
- * Label of the forms setting. Default "Forms".
- */
-label?: string
-/**
- * If true, you can only select one form to play at a time.
- */
-exclusive?: boolean
-}
-/**
- * This interface was referenced by `undefined`'s JSON-Schema definition
- * via the `patternProperty` "^[a-z]+$".
- */
-export interface SchemaFormConfig {
-combine?: string[]
-label: string
-active?: boolean
-/**
- * If set, this form will not appear in the settings, but will follow the setting of the given key.
- */
-groupWith?: string
-}
 export interface SchemaSubsetItems {
+forms?: string[]
 /**
  * Keys to assign the property entries of data rows to. RegExp-ish pattern: `PROPERTY(>(v|var|variant):VARIANT)?(>(l|lang|language):LANGUAGE)?`
  */
@@ -469,25 +506,14 @@ methods: {
  */
 export interface SchemaCombineMethod {
 label: string
-subsets: string[]
-letterConfig?: (null | {
-form: string
-})[]
-properties?: {
-[k: string]: SchemaCombinePropertyConfig
-}
-templates?: SchemaCombineTemplates
-regExpFlags?: RegExpFlags
-}
-/**
- * This interface was referenced by `undefined`'s JSON-Schema definition
- * via the `patternProperty` "^[a-z]+$".
- */
-export interface SchemaCombinePropertyConfig {
-sources: (string | string[])
+from: {
+subset: string
+form?: string
+}[]
 templates?: SchemaCombineTemplates
 regExpFlags?: RegExpFlags
 }
 export interface SchemaGlobalSelectorConfig {
 style?: SchemaSelectorBlockStyle
+font?: SchemaFontReference
 }

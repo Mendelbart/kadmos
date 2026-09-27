@@ -4,12 +4,12 @@ import {Setting} from "./ValueElement";
 import {map} from "../utils/object";
 
 export type SettingsValues = {[x: string]: any} | any[];
-export type ObservableSetting<T> = Setting<T> & Observable<[T, ...any]>;
+export type ObservableSetting<T, P extends any[] = any[]> = Setting<T> & Observable<[T, ...P]>;
 export type Settings<T> = {
     [K in keyof T]: ObservableSetting<T[K]>
 }
 
-export default class SettingCollection<T extends SettingsValues> extends Observable<[T, (keyof T)?]> {
+export default class SettingCollection<T extends SettingsValues> extends Observable<[T, (keyof T)?]> implements Setting<T> {
     private readonly settings: Settings<T>;
     readonly node: HTMLDivElement;
 
@@ -21,7 +21,7 @@ export default class SettingCollection<T extends SettingsValues> extends Observa
         this.node.role = "group";
 
         for (const [key, setting] of _entries(settings)) {
-            this.node.append(setting.node);
+            if (setting.node) this.node.append(setting.node);
             setting.observers.push(() => this.observers.call(this.getValues(), key));
         }
     }
@@ -46,6 +46,14 @@ export default class SettingCollection<T extends SettingsValues> extends Observa
         this.settings[key] = setting;
     }
 
+    get value(): T {
+        return this.getValues();
+    }
+
+    set value(values: T) {
+        this.setValues(values);
+    }
+
     getValues(): T {
         if (Array.isArray(this.settings)) {
             return this.settings.map(setting => setting.value) as T;
@@ -65,9 +73,10 @@ export default class SettingCollection<T extends SettingsValues> extends Observa
         return this.get(key).value;
     }
 
-    replaceWith(sc: SettingCollection<any>): void {
+    replaceWith<T extends SettingsValues>(sc: SettingCollection<T>) {
         this.node.replaceWith(sc.node);
         this.teardown();
+        return sc;
     }
 
     teardown(): void {
@@ -75,10 +84,6 @@ export default class SettingCollection<T extends SettingsValues> extends Observa
             setting.teardown();
         }
         super.teardown();
-    }
-
-    remove() {
-        this.node.remove();
     }
 }
 

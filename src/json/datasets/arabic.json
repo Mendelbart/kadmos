@@ -13,32 +13,47 @@
         "naskh": {"family": "Noto Naskh Arabic", "label": "Naskh", "default": true},
         "sans": {"family": "Noto Sans Arabic", "label": "Sans"},
         "kufi": {"family": "Noto Kufi Arabic", "label": "Kufi"}
+      },
+      "params": {
+        "weight": 600
       }
     }
   },
-  "game": {
-    "defaultWeight": 600
+  "games": {
+    "configs": {
+      "letters": {
+        "type": "single",
+        "subset": "letters",
+        "forms": {
+          "exclusive": true
+        },
+        "properties": {
+          "data": {
+            "name": {
+              "label": "Name"
+            },
+            "roman": {
+              "label": "Romanization"
+            }
+          },
+          "exclusive": true
+        }
+      }
+    }
   },
   "subsets": {
     "letters": {
-      "label": "Letters",
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
             "type": "string",
-            "properties": {
-              "substitutions": [{"pattern": "[ʻʼ']+", "repl": [""]}]
-            }
-          },
-          "active": true},
+            "gradeSubstitutions": [["[ʻʼ']+", [""]]]
+          }
+        },
         "roman": {
-          "label": "Romanization",
           "config": {
             "type": "string",
-            "properties": {
-              "maxDist": 0
-            }
+            "maxDist": 0
           }
         }
       },
@@ -52,21 +67,12 @@
         },
         "label": {"property": "name"},
         "style": {
-          "buttonWidth": 1.75,
+          "buttonWidth": 1.875,
           "labelGap": 2.5
         }
       },
-      "forms": {
-        "label": "Form",
-        "data": {
-          "isolated": {"label": "Isolated", "active": true},
-          "initial": {"label": "Initial"},
-          "medial": {"label": "Medial"},
-          "final": {"label": "Final"}
-        },
-        "exclusive": true
-      },
       "items": {
+        "forms": ["isolated", "initial", "medial", "final"],
         "properties": ["name", "roman"],
         "data": [
           [["ﺍ", "ﺍ", "ـﺎ", "ـﺎ"], ["ʼalif", "'"]],

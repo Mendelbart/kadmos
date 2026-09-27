@@ -4,11 +4,11 @@ import {Dataset, DEFAULT_DATASET, TERMS} from "./dataset/Dataset";
 import DATASETS_METADATA from '../json/datasets_meta.json';
 import {DOMUtils, ObjectUtils} from "./utils";
 import {encodeBase64BoolArray, decodeBase64BoolArray} from "./utils/base64";
-import DatasetMediator, {DatasetCache, SubsetCache} from "./dataset/DatasetMediator";
 import {createButtonGroup} from "./settings/ButtonGroup";
 import Pages from "./utils/classes/Pages";
 import {grabFromHTML, grabNode, selectNode, span, tag} from "./utils/dom";
 import {SelectorSettings} from "./dataset/DatasetSubset";
+import DatasetGameMediator from "./dataset/DatasetGameMediator";
 
 
 const SwitchTrueValue = "1";
@@ -18,18 +18,14 @@ type SwitchValue = typeof SwitchTrueValue | typeof SwitchFalseValue;
 const GAME_SETTINGS_PAGES = getGameSettingsPages();
 grabNode(document, "div", "#new-game-settings").append(GAME_SETTINGS_PAGES.node)
 
-/** @type {Game} */
 let GAME: Game<any, any>;
-
-/** @type {Dataset} */
+let DGM: DatasetGameMediator<any>;
 let DATASET: Dataset<any>;
-/** @type {DatasetMediator} */
-let DSM: DatasetMediator<any>;
 
 const datasetSelect = grabNode(document, "select", "#datasetSelect");
 
 const GENERIC_GAME_SETTINGS = getGenericGameSettings();
-const PAGE_SETTINGS = getPageSettings();
+setupPageSettings();
 
 DOMUtils.trackDevicePixelRatio();
 
@@ -123,6 +119,7 @@ function setupDatasetSelect() {
             });
         } catch (e) {
             console.error(`Error occurred fetching dataset with key ${datasetSelect.value}`);
+            console.error(e);
             disableCurrentDatasetOption();
         }
     });
@@ -150,15 +147,14 @@ function setPlaying(playing: boolean) {
 
 /***************************** PAGE SETTINGS ************************/
 
-type ColorMode = "light" | "dark" | "default";
+type ColorMode = "light" | "dark" | "system";
 interface PageConfig {
     accentHue: number;
     colorMode: ColorMode;
     useViewTransitions: SwitchValue;
 }
 
-
-function getPageSettings() {
+function setupPageSettings() {
     const getStored = (key: string) => window.localStorage.getItem(key);
     const settings = new SettingCollection<PageConfig>({
         accentHue: getAccentHueSetting(getStored("accentHue")),
@@ -169,8 +165,6 @@ function getPageSettings() {
     settings.observers.push((values, changedKey) => {
         if (changedKey) window.localStorage.setItem(changedKey, values[changedKey].toString());
     });
-
-    settings.node.remove();
 
     const dialog = DOMUtils.createDialog(
         "Settings", settings.node,
@@ -187,8 +181,7 @@ function getAccentHueSetting(value?: string | null) {
     let hue = value == null ? value : parseInt(value);
     if (hue == null || Number.isNaN(hue)) hue = 250;
     setAccentHue(hue);
-    const slider = Slider.create(0, 360, hue);
-    slider.label("Accent Hue");
+    const slider = Slider.create({min: 0, max: 360, value: hue, label: "Accent Hue"});
     slider.observers.push(hue => setAccentHue(hue));
     slider.node.id = "accentHueSlider";
     return slider;
@@ -199,7 +192,7 @@ function setAccentHue(hue: number) {
 }
 
 function getColorMode(mode: string | null): ColorMode {
-    if (!mode || !["default", "light", "dark"].includes(mode)) return "default";
+    if (!mode || !["system", "light", "dark"].includes(mode)) return "system";
     return mode as ColorMode;
 }
 
@@ -210,7 +203,7 @@ function getPageLightDarkModeSetting(mode: string | null): RadioButtonGroup<Colo
 
     const colorModeSetting = createButtonGroup(
         {
-            default: "Default",
+            system: "System",
             dark: "Dark",
             light: "Light",
         },
@@ -226,12 +219,12 @@ function getPageLightDarkModeSetting(mode: string | null): RadioButtonGroup<Colo
 }
 
 function setLightDarkMode(mode: ColorMode) {
-    if (!["default", "dark", "light"].includes(mode)) {
-        if (mode) console.error(`Invalid color mode ${mode}, use dark, light or default.`);
-        mode = "default";
+    if (!["system", "dark", "light"].includes(mode)) {
+        if (mode) console.error(`Invalid color mode ${mode}, use dark, light or system.`);
+        mode = "system";
     }
 
-    if (mode === "default") {
+    if (mode === "system") {
         document.documentElement.classList.remove("dark-mode", "light-mode");
         return;
     }
@@ -275,11 +268,11 @@ async function selectDataset(dataset: Dataset<any>) {
 
         GAME_SETTINGS_PAGES.open(0);
 
-        setupDSM();
+        setupDGM();
         checkPagesNextButton();
-        setupGameHeading(DSM.settings.selector?.getValue("variant"));
+        setupGameHeading(DGM.settings.get("settings").getValue("variant"));
     } catch (err) {
-        return console.error(err);
+        console.error(err);
     }
 }
 
@@ -296,30 +289,19 @@ function setupTerms() {
     }
 }
 
-function setupDSM() {
-    DSM?.teardown();
+function setupDGM() {
+    DGM?.teardown();
 
-    const [subset, cache] = getStoredSettings();
-    try {
-        DSM = new DatasetMediator(DATASET, cache, {subset: DOMUtils.getSearchParam("subset") ?? subset});
-    } catch (e) {
-        console.error("Error occurred during DSM construction, probably because of invalid cache.");
-        console.error(e);
-        DSM = new DatasetMediator(DATASET);
-    }
-    DSM.observers.push(checkPagesNextButton, storeSettings);
+    DGM = new DatasetGameMediator(DATASET);
+    DGM.observers.push(checkPagesNextButton)
+    // DGM.observers.push(storeSettings);
 
     const filterSettings = selectNode(document, "#dataset-filter-settings")
-    filterSettings.replaceChildren(DSM.settings.selector?.node ?? "", DSM.selector.node);
-    if (DSM.settings.game) selectNode(document, "#dataset-game-settings").replaceChildren(DSM.settings.game.node);
+    const children = [DGM.gameSetting?.node, DGM.settings.node].filter(x => x != null);
+    filterSettings.replaceChildren(...children);
 
-    if (DSM.settings.subset) {
-        filterSettings.prepend(DSM.settings.subset.node);
-    }
-
-    const variantSetting = DSM.settings.selector?.get("variant");
-    if (variantSetting) variantSetting.observers.push(variant => {
-        setupGameHeading(variant);
+    DGM.observers.push(value => {
+        setupGameHeading(value.settings.variant);
     });
 }
 
@@ -329,14 +311,14 @@ function setupGameHeading(variant?: string) {
 }
 
 function checkPagesNextButton(): void {
-    GAME_SETTINGS_PAGES.elements.buttonNext.disabled = DSM.checkedCount() === 0;
+    GAME_SETTINGS_PAGES.elements.buttonNext.disabled = !DGM.settingsValid();
 }
 
 
 /***************************************** GAME *******************************/
 function startGame() {
     GAME?.remove();
-    GAME = DSM.getGame(GENERIC_GAME_SETTINGS.getValues());
+    GAME = DGM.getGame(GENERIC_GAME_SETTINGS.getValues());
     GAME.onFinish.push(() => setPlaying(false));
 
     setPlaying(true);

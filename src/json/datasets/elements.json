@@ -34,6 +34,24 @@
     "keys": ["en", "de"],
     "default": "en"
   },
+  "games": {
+    "configs": {
+      "els": {
+        "type": "single",
+        "subset": "els",
+        "properties": {
+          "data": {
+            "name": {
+              "label": "Name"
+            },
+            "no": {
+              "label": "Atomic Number"
+            }
+          }
+        }
+      }
+    }
+  },
   "subsets": {
     "els": {
       "label": "Elements",
@@ -67,22 +85,16 @@
       },
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1
-              }
-            }
-          },
-          "active": true
+            "type": "string",
+            "maxDist": 1,
+            "list": [{}]
+          }
         },
         "no": {
-          "label": "Atomic Number",
           "config": {
-            "type": "integer"
+            "type": "number",
+            "integer": true
           }
         }
       },

@@ -17,14 +17,13 @@
       "label": "Letters",
       "properties": {
         "letter": {
-          "label": "Letter",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {
+        "forms": ["default"],
         "properties": ["letter"],
         "data": [
           [["A"], ["a"]],
@@ -65,14 +64,13 @@
       "label": "Digits",
       "properties": {
         "digit": {
-          "label": "Digit",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {
+        "forms": ["default"],
         "properties": ["digit"],
         "data": [
           [["A"], ["1"]],
@@ -101,14 +99,10 @@
       "label": "Prefixes",
       "properties": {
         "prefix": {
-          "label": "Prefix",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string"
-            }
-          },
-          "active": true
+            "type": "string",
+            "list": [{}]
+          }
         }
       },
       "items": {
@@ -145,11 +139,9 @@
       "label": "Punctuation",
       "properties": {
         "punc": {
-          "label": "Punctuation",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {

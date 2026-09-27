@@ -2,7 +2,7 @@
   "metadata": {
     "key": "hangul",
     "name": "Hangul (Korean)",
-    "gameHeading": {"string": "카드모스", "font": {"key": "sans"}}
+    "gameHeading": {"string": "카드모스", "font": {"key": "sans"}}
   },
   "letterConfig": {
     "type": "string",
@@ -14,14 +14,17 @@
       "manualUnicodes": "ac00-d7a3"
     }
   },
+  "selector": {
+    "style": {
+      "buttonWidth": 1.75
+    }
+  },
   "subsets": {
     "basic": {
       "label": "Basic letters",
       "properties": {
         "name": {
-          "label": "Name",
-          "config": {"type": "string"},
-          "active": true
+          "config": {"type": "string"}
         }
       },
       "items": {
@@ -70,7 +73,6 @@
       "label": "Initial",
       "properties": {
         "transl": {
-          "label": "Transliteration",
           "config": {"type": "string"}
         }
       },
@@ -101,9 +103,6 @@
       "selector": {
         "label": {
           "property": "transl"
-        },
-        "style": {
-          "buttonWidth": "2.5rem"
         }
       }
     },
@@ -111,9 +110,7 @@
       "label": "Vowels",
       "properties": {
         "transl": {
-          "label": "Transliteration",
-          "config": {"type": "string"},
-          "active": true
+          "config": {"type": "string"}
         }
       },
       "items": {
@@ -145,9 +142,6 @@
       "selector": {
         "label": {
           "property": "transl"
-        },
-        "style": {
-          "buttonWidth": "2.5rem"
         }
       }
     },
@@ -155,7 +149,6 @@
       "label": "Final",
       "properties": {
         "transl": {
-          "label": "Transliteration",
           "config": {"type": "string"}
         }
       },
@@ -183,9 +176,6 @@
       "selector": {
         "label": {
           "property": "transl"
-        },
-        "style": {
-          "buttonWidth": "2.5rem"
         }
       }
     }

@@ -8,11 +8,11 @@ import QuizDealer from "../quiz/QuizDealer";
 import {
     ElementAttrs,
     input,
-    DOMFactory, GrabbedNodes, div
+    DOMFactory, GrabbedNodes, div, StylableElement
 } from "../utils/dom";
 import QuizItem, {QuizAnswers} from "../quiz/QuizItem";
-import {ObservableWithNode} from "../utils/classes/Observable";
 import Ribbon from "../utils/classes/Ribbon";
+import {ObservableSetting} from "../settings/SettingCollection";
 
 
 export interface CardDisplayMeta {
@@ -20,7 +20,10 @@ export interface CardDisplayMeta {
     dir?: "rtl" | "ltr" | "auto";
 }
 
-type SettingsCallbackPair<P extends any[]> = [ObservableWithNode<P>, (card: Card, ...args: P) => void]
+export interface SettingCallbackPair<V, P extends any[] = any[]> {
+    setting: ObservableSetting<V, P>,
+    apply: (element: StylableElement, value: V, ...args: P) => void
+}
 
 export interface GameConfig {
     keepKeyboardOpen: boolean;
@@ -77,7 +80,7 @@ export default class Game<T, A extends QuizAnswers> {
     settings?: {
         ribbon: Ribbon,
         container: HTMLDivElement,
-        pairs: SettingsCallbackPair<any[]>[];
+        pairs: SettingCallbackPair<any>[];
     }
 
     readonly listeners: {
@@ -172,17 +175,17 @@ export default class Game<T, A extends QuizAnswers> {
         return this.reference ? [this.mainCard, ...this.reference.cards] : [this.mainCard];
     }
 
-    addCardSettings<P extends any[]>(settings: ObservableWithNode<P>, applySettings: (card: Card, ...args: P) => void): void {
+    addCardSettings<V>({setting, apply}: SettingCallbackPair<V>): void {
         if (!this.settings) this.settings = this.getSettings();
 
-        this.settings.pairs.push([settings, applySettings]);
-        settings.observers.push((...args) => {
+        this.settings.pairs.push({setting, apply});
+        setting.observers.push((...args) => {
             for (const card of this.allCards()) {
-                applySettings(card, ...args);
+                apply(card.displayNode, ...args);
             }
         });
 
-        this.settings.container.append(settings.node);
+        if (setting.node) this.settings.container.append(setting.node);
 
         for (const card of this.allCards()) {
             this.applyCardSettings(card);
@@ -191,8 +194,8 @@ export default class Game<T, A extends QuizAnswers> {
 
     applyCardSettings(card: Card): void {
         if (this.settings) {
-            for (const [settings, applySettings] of this.settings.pairs) {
-                applySettings(card, ...settings.observerArgs());
+            for (const {setting, apply} of this.settings.pairs) {
+                apply(card.displayNode, ...setting.observerArgs());
             }
         }
     }
@@ -278,7 +281,7 @@ export default class Game<T, A extends QuizAnswers> {
     }
 
     teardown() {
-        if (this.settings) this.settings.pairs.forEach(s => s[0].teardown());
+        if (this.settings) this.settings.pairs.forEach(s => s.setting.teardown());
     }
 
     allInputsCorrect() {

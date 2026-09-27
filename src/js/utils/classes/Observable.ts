@@ -1,7 +1,5 @@
 import FunctionSet from "./FunctionSet";
 
-export type ObservableWithNode<P extends any[]> = Observable<P> & {node: Node};
-
 export default abstract class Observable<P extends any[]> {
     observers: FunctionSet<(...args: P) => any>
 

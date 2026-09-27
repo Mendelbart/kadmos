@@ -14,23 +14,30 @@
       }
     }
   },
+  "games": {
+    "configs": {
+      "letters": {
+        "type": "single",
+        "subset": "letters",
+        "forms": {
+          "label": "Case",
+          "data": {
+            "upper": {"label": "Uppercase"},
+            "lower": {"label": "Lowercase"}
+          },
+          "exclusive": false
+        }
+      }
+    }
+  },
   "subsets": {
     "letters": {
       "label": "Letters",
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
             "type": "string"
-          },
-          "active": true
-        }
-      },
-      "forms": {
-        "label": "Case",
-        "data": {
-          "upper": {"label": "Uppercase"},
-          "lower": {"label": "Lowercase"}
+          }
         }
       },
       "selector": {
@@ -38,6 +45,7 @@
         "style": {"buttonWidth": "6.25ch"}
       },
       "items": {
+        "forms": ["upper", "lower"],
         "properties": ["name"],
         "data": [
           [["А", "а"], ["A"]],

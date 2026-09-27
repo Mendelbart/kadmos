@@ -27,7 +27,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     readonly buttons: SelectorButton[];
     node: HTMLDivElement;
     contentFitter: ElementFitter;
-    labelFitter?: ElementFitter;
+    labelFitter: ElementFitter;
 
     range?: {
         indices: number[],
@@ -46,7 +46,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
             index, callbacks.content(item, index), callbacks.label ? callbacks.label(item, index) : undefined
         ));
         this.contentFitter = this.getContentFitter();
-        if (callbacks.label) this.setupLabelFitter();
+        this.labelFitter = this.getLabelFitter();
 
         this.bindListeners();
         this.onRangePointerDownDetail = eventListenerWithDetail(this.onRangePointerDown, {
@@ -84,10 +84,6 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
         const fitter = new ElementFitter();
         fitter.fit(...this.buttons.map(button => button.label).filter(x => x != null));
         return fitter;
-    }
-
-    setupLabelFitter() {
-        return this.labelFitter = this.getLabelFitter();
     }
 
     observerArgs(): [boolean[]] {
@@ -141,6 +137,11 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
 
     getDisabled(): boolean[] {
         return this.buttons.map(button => button.isDisabled());
+    }
+
+    updateLabels(callback: SelectorItemCallback<T, string>) {
+        this.buttons.forEach((button, index) => button.setLabel(callback(this.items[index], index)));
+        this.labelFitter.updateChildren();
     }
 
     setButtonChecked(index: number, checked: boolean) {
@@ -352,7 +353,7 @@ export default class SelectorBlock<T> extends Observable<[boolean[]]> {
     teardown(): void {
         this.removeListeners();
         this.contentFitter.teardown();
-        this.labelFitter?.teardown();
+        this.labelFitter.teardown();
         super.teardown();
     }
 }
@@ -363,7 +364,7 @@ export class SelectorButton {
     readonly node: HTMLDivElement;
     readonly contentContainer: HTMLDivElement;
     content: HTMLElement
-    label?: HTMLSpanElement;
+    label: HTMLSpanElement;
 
     constructor(index: number, content: HTMLElement | string, label?: string) {
         this.node = DOMUtils.tag("div", ".selector-button");
@@ -377,15 +378,16 @@ export class SelectorButton {
 
         this.index = index;
         this.node.dataset.index = index.toString();
-        this.contentContainer = DOMUtils.tag("div", ".selector-button-content")
-        this.node.append(this.contentContainer);
+        this.contentContainer = DOMUtils.tag("div", ".selector-button-content");
+        this.label = DOMUtils.tag("span", ".selector-button-label");
+        this.node.append(this.contentContainer, this.label);
 
         if (typeof content === "string") content = span("", content);
         this.content = content;
         this.contentContainer.replaceChildren(content);
 
         this.content = content;
-        if (label) this.setLabel(label);
+        this.setLabel(label);
     }
 
     setChecked(checked: boolean): void {
@@ -408,13 +410,8 @@ export class SelectorButton {
         callback(this.content);
     }
 
-    setLabel(label: string): void {
-        if (!this.label) {
-            this.label = DOMUtils.tag("span", ".selector-button-label");
-            this.node.append(this.label);
-        }
-
-        this.label.textContent = label;
+    setLabel(label?: string): void {
+        this.label.textContent = label ? label : "";
     }
 
     static getEventTargetIndex(target: EventTarget | null): number | undefined {

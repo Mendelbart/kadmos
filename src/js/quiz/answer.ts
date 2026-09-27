@@ -10,49 +10,46 @@ export interface QuizAnswer {
     mark(guess: string): MarkedGuess;
 }
 
-export interface StringAnswerRecipe {
-    type: "string",
-    properties?: StringAnswerConfig,
-}
-
-export interface NumberAnswerRecipe {
-    type: "number" | "integer"
-    properties?: NumberAnswerConfig,
-}
-
-export interface ListAnswerRecipe {
-    type: "list",
-    items: StringAnswerRecipe | NumberAnswerRecipe | ListAnswerRecipe,
-    properties?: ListAnswerConfig
-}
+export type StringAnswerRecipe = StringAnswerConfig & {type: "string", list?: ListAnswerConfig[]};
+export type NumberAnswerRecipe = NumberAnswerConfig & {type: "number"};
 
 export interface QuizAnswerTypeMap {
-    string: StringAnswer,
-    number: NumberAnswer,
-    integer: NumberAnswer,
-    list: ListAnswer<QuizAnswer>
+    string: StringAnswer | ListAnswer<"string">,
+    number: NumberAnswer
 }
 
-export type QuizAnswerRecipe = StringAnswerRecipe | NumberAnswerRecipe | ListAnswerRecipe;
+export interface QuizAnswerRecipeMap {
+    string: StringAnswerRecipe,
+    number: NumberAnswerRecipe
+}
 
-const factories: {[K in keyof QuizAnswerTypeMap]: (recipe: QuizAnswerRecipe & {type: K}) => (value: string) => QuizAnswerTypeMap[K]} = {
-    string: ({properties}: StringAnswerRecipe) => (value: string) => new StringAnswer(value, properties),
-    number: ({properties}: NumberAnswerRecipe) => (value: string) => new NumberAnswer(value, properties),
-    integer({properties}: NumberAnswerRecipe) {
-        const config = Object.assign({}, properties, {integer: true});
-        return (value: string)=> new NumberAnswer(value, config);
+const factories: {[K in keyof QuizAnswerTypeMap]: (recipe: QuizAnswerRecipeMap[K]) => (value: string) => QuizAnswerTypeMap[K]} = {
+    string: (recipe: StringAnswerRecipe) => {
+        if (recipe.list && recipe.list.length > 0) {
+            const listConfig = recipe.list[0];
+            const factory = factories.string(
+                {...recipe, list: recipe.list.slice(1)}
+            );
+            return (value: string) => new ListAnswer(value, factory, listConfig);
+        }
+        return (value: string) => new StringAnswer(value, recipe);
     },
-    list({items, properties}: ListAnswerRecipe): (value: string) => ListAnswer<QuizAnswer> {
-        const callback = QuizAnswerFactory(items);
-        return (value: string) => new ListAnswer<QuizAnswer>(value, callback, properties);
-    }
+    number: (config: NumberAnswerConfig) => (value: string) => new NumberAnswer(value, config),
 }
 
-export function QuizAnswerFactory<type extends QuizAnswerRecipe["type"]>(recipe: QuizAnswerRecipe & {type: type}): (value: string) => QuizAnswerTypeMap[type] {
-    return factories[recipe.type](recipe);
+export function QuizAnswerFactory<K extends keyof QuizAnswerTypeMap>(recipe: QuizAnswerRecipeMap[K]): (value: string) => QuizAnswerTypeMap[K] {
+    return factories[recipe.type as K](recipe);
 }
 
 export const DefaultListSplitter = "[,;/]";
+
+export function getSplitter(recipe: StringAnswerRecipe | NumberAnswerRecipe): RegExp | undefined {
+    if ("list" in recipe && recipe.list && recipe.list.length > 0) {
+        return new RegExp(recipe.list.map(
+            listConfig => listConfig.splitter ?? DefaultListSplitter
+        ).join("|"), "g");
+    }
+}
 
 export abstract class SimpleQuizAnswer<T> implements QuizAnswer {
     display: string;
@@ -117,6 +114,7 @@ export class NumberAnswer extends SimpleQuizAnswer<number> {
             const logBaseString = distanceMode.substring(3);
             this.logBase = logBaseString ? parseFloat(logBaseString) : 10;
         } else {
+            if (distanceMode !== "linear") console.error(`Invalid distance mode ${distanceMode}`);
             this.distanceMode = "linear";
         }
 
@@ -138,83 +136,87 @@ export class NumberAnswer extends SimpleQuizAnswer<number> {
     }
 }
 
-export interface StringSubstitution {
-    pattern: string | RegExp,
-    repl: string[]
-}
-
 export interface StringAnswerConfig {
     maxDist?: number;
     maxDistMult?: number;
-    substitutions?: StringSubstitution[];
-    forceSubstitutions?: boolean;
+    substitutions?: [string | RegExp, string][];
+    gradeSubstitutions?: GradeSubstitution[];
     caseSensitive?: boolean;
-    ignoreBrackets?: string | false;
 }
+export type GradeSubstitution = [string | RegExp, string[]];
 
 export class StringAnswer implements QuizAnswer {
     display: string;
-    config: Required<StringAnswerConfig>;
     values: string[];
+    config: {
+        maxDist: number,
+        maxDistMult: number,
+        gradeSubstitutions: [RegExp, string[]][],
+        caseSensitive: boolean
+    };
 
     constructor(display: string, config: StringAnswerConfig = {}) {
-        this.config = Object.assign({}, {
-            maxDist: 0,
-            maxDistMult: Infinity,
-            substitutions: [],
-            forceSubstitutions: false,
-            caseSensitive: false,
-            ignoreBrackets: "("
-        }, config);
-        this.display = display;
+        const caseSensitive = config.caseSensitive ?? false;
+        const gradeSubstitutions = (config.gradeSubstitutions ?? []).map(
+            ([pattern, repls]): [RegExp, string[]] => [this.toRegex(pattern, caseSensitive), repls]
+        );
+        this.display = this.applySingleSubstitutions(display, config.substitutions ?? []);
+        this.config = {
+            maxDist: config.maxDist ?? 0,
+            maxDistMult: config.maxDistMult ?? 0,
+            gradeSubstitutions,
+            caseSensitive
+        }
 
-        this.values = this.applySubstitutions(display, this.config).map(s => this.standardizeString(s));
+        this.values = this.applyGradeSubstitutions(this.display, this.config.gradeSubstitutions).map(s => this.standardizeString(s));
+    }
+
+    toRegex(value: string | RegExp, caseSensitive: boolean) {
+        return new RegExp(value, caseSensitive ? "gui" : "gu");
     }
 
     getMaxDist(value: string): number {
+        if (this.config.maxDistMult === 0) return this.config.maxDist;
         return this.config.maxDist + Math.floor(value.length / this.config.maxDistMult);
     }
 
-    applySubstitutions(display: string, config: {substitutions: StringSubstitution[], forceSubstitutions: boolean}): string[] {
-        let vals = [display];
-        const flags = this.config.caseSensitive ? "gu" : "gui";
+    applySingleSubstitutions(value: string, substitutions: [string | RegExp, string][]): string {
+        for (const [pattern, repl] of substitutions) {
+            value = value.replace(new RegExp(pattern, "gu"), repl);
+        }
+        return value;
+    }
 
-        for (const {pattern, repl} of config.substitutions) {
-            const regex = new RegExp(pattern, flags);
-            vals = vals.flatMap(val => {
-                const newVals = repl.map(sub => val.replace(regex, sub));
-                if (!config.forceSubstitutions) newVals.push(val);
-                return newVals;
-            });
+    applyGradeSubstitutions(display: string, substitutions: [RegExp, string[]][]): string[] {
+        let vals = [display];
+
+        for (const [regex, repls] of substitutions) {
+            vals = vals.flatMap(val => repls.map(repl => val.replace(regex, repl)));
         }
 
         return [...new Set(vals)];
+    }
+
+    applySingleGradeSubstitutions(guess: string, substitutions: [RegExp, string[]][]): string {
+        for (const [regex, repls] of substitutions) {
+            guess = guess.replace(regex, repls[0]);
+        }
+        return guess;
     }
 
     standardizeString(str: string): string {
         str = str.trim().normalize("NFKD").replace(/\p{M}/gu, "");
         if (!this.config.caseSensitive) str = str.toLowerCase();
 
-        if (this.config.ignoreBrackets) {
-            for (const opening of this.config.ignoreBrackets.split("")) {
-                if (!"([{".includes(opening)) {
-                    console.error("Invalid opening ignore bracket.");
-                    continue;
-                }
-
-                str = removeBrackets(str, opening as "(" | "[" | "{");
-            }
-        }
-
         return str;
     }
 
-    private _grade(guess: string, value: string) {
+    private _grade(guess: string, value: string): number {
         return gradeFromDist(osaDistance(guess, value), this.getMaxDist(value));
     }
 
     grade(guess: string): number {
-        guess = this.standardizeString(guess);
+        guess = this.standardizeString(this.applySingleGradeSubstitutions(guess.trim(), this.config.gradeSubstitutions));
         return Math.max(...this.values.map(value => this._grade(guess, value)));
     }
 
@@ -230,13 +232,13 @@ export interface ListAnswerConfig {
     gradeMode?: "one" | "all"
 }
 
-export class ListAnswer<T extends QuizAnswer> implements QuizAnswer {
+export class ListAnswer<T extends keyof QuizAnswerTypeMap> implements QuizAnswer {
     config: Required<ListAnswerConfig> & {splitter: RegExp};
     display: string;
     values: SubString[];
-    answers: T[];
+    answers: QuizAnswerTypeMap[T][];
 
-    constructor(value: string, callback: (item: string) => T, config: ListAnswerConfig = {}) {
+    constructor(value: string, callback: (item: string) => QuizAnswerTypeMap[T], config: ListAnswerConfig = {}) {
         this.display = value;
 
         this.config = {
@@ -345,32 +347,4 @@ function gradeFromDist(dist: number, maxDist: number = 0): number {
     if (maxDist === 0) return 1;
 
     return 0.5 + 0.5 * (maxDist - dist) / maxDist;
-}
-
-
-const closingBrackets = Object.freeze({"(": ")", "[": "]", "{": "}"});
-
-function removeBrackets(str: string, opening: '(' | '[' | '{' = '('): string {
-    let i = 0;
-    let depth = 0;
-    let bracketStart = -1;
-    const closing = closingBrackets[opening];
-
-    while (i < str.length) {
-        const char = str.charAt(i);
-        if (char === opening) {
-            depth += 1;
-            if (depth === 1) bracketStart = i;
-        } else if (char === closing && depth > 0) {
-            depth -= 1;
-            if (depth === 0) {
-                str = str.substring(0, bracketStart) + str.substring(i + 1);
-                i = bracketStart - 1;
-            }
-        }
-
-        i++;
-    }
-
-    return str;
 }

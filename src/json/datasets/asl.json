@@ -19,11 +19,9 @@
       "label": "Letters",
       "properties": {
         "letter": {
-          "label": "Letter",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {
@@ -40,11 +38,9 @@
       "label": "Digits",
       "properties": {
         "digit": {
-          "label": "Digit",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {

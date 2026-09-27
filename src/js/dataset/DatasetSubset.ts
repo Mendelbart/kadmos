@@ -1,6 +1,6 @@
 import {Matrix, ObjectUtils, ParametricValue} from "../utils";
-import {range} from "../utils/array";
-import {DefaultListSplitter, QuizAnswer, QuizAnswerFactory} from "../quiz/answer";
+import {full, range} from "../utils/array";
+import {DefaultListSplitter, getSplitter, QuizAnswer, QuizAnswerFactory} from "../quiz/answer";
 import {LetterFormsCombination, createNodeable, SVGNodeable} from "../letter";
 import {Selector, SelectorBlock, SelectorGridBlock} from "../selector";
 import {
@@ -10,39 +10,26 @@ import {
     parseMatrixRanges,
     parseRanges
 } from "../utils/indices";
-import {SettingCollection} from "../settings";
-import QuizItem from '../quiz/QuizItem';
 import {createButtonGroup} from "../settings/ButtonGroup";
 import {createSelect, stringToNumberSetting, TransformedSetting} from "../settings/ValueElement";
 import {
     SchemaFontReference,
-    SchemaFormConfig,
-    SchemaFormsConfig,
     SchemaLetterConfig, SchemaLetterRanges, SchemaQuizAnswerConfig, SchemaSelectorBlock,
     SchemaSelectorConfig,
     SchemaSubset, SchemaSubsetItems,
     SchemaSubsetProperties, SchemaSVGLetterConfig, SchemaVariantData, SchemaVariantsConfig
 } from "../../json/dataset.schema";
-import {Nodeable} from "../letter/letter";
 import {ObservableSetting} from "../settings/SettingCollection";
 import {LetterElementMap, NodeableFromLetterKey} from "../letter/utils";
 import ConstantSetting from "../settings/ConstantSetting";
 import {SelectorButtonCallbacks} from "../selector/SelectorBlock";
+import {capitalize} from "../utils/object";
 
 export interface SubsetProperty {
-    label: string,
     factory: (value: string) => QuizAnswer,
     config: SchemaQuizAnswerConfig,
     active?: boolean
 }
-
-
-export const DEFAULT_FORM_KEY = "0";
-const DEFAULT_FORMS: SchemaFormsConfig = {
-    data: {},
-    exclusive: false
-};
-DEFAULT_FORMS.data[DEFAULT_FORM_KEY] = {label: "Default"};
 
 export interface LetterItemTypeMap {
     string: string,
@@ -70,7 +57,7 @@ export interface SelectorSettings {
     forms: string[]
 }
 
-export type DatasetSelector<K extends keyof LetterElementMap> = Selector<DatasetItem<NodeableFromLetterKey<K>>>;
+export type DatasetSelector<K extends keyof LetterElementMap> = Selector<DatasetItem<K>>;
 
 export interface DatasetAnswerParams {
     variant?: string,
@@ -85,19 +72,19 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
     key: string;
     label: string;
     letterConfig: SchemaLetterConfig & {type: K};
-    forms: SchemaFormsConfig;
     properties: Record<string, SubsetProperty>;
     variants?: SubsetVariants;
-    items: DatasetItem<NodeableFromLetterKey<K>>[];
+    items: DatasetItem<K>[];
     itemIndexMaps: Record<string, Map<string | number, number>>;
     selectorData: SelectorData
+    forms: string[]
 
     constructor(key: string, data: Omit<SchemaSubset, "letterConfig" | "variants"> & {letterConfig: SchemaLetterConfig & {type: K}, variants?: SubsetVariantsConfig}) {
         this.key = key;
-        this.label = data.label;
+        this.label = data.label ?? capitalize(key);
         this.letterConfig = data.letterConfig;
-        this.forms = this.processForms(data.forms);
         this.properties = this.processProperties(data.properties);
+        this.forms = data.items.forms ?? full(Math.max(...data.items.data.map(([forms]) => forms.length)), x => x.toString());
         this.items = this.processItems(data.items);
         this.itemIndexMaps = {};
         if (data.variants) this.variants = this.processVariants(data.variants);
@@ -115,10 +102,6 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
                 }
             })
         }
-    }
-
-    processForms(forms?: SchemaFormsConfig) {
-        return forms ?? DEFAULT_FORMS;
     }
 
     processProperties(properties: SchemaSubsetProperties): Record<string, SubsetProperty> {
@@ -142,7 +125,7 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         };
     }
 
-    processItems({properties, data}: SchemaSubsetItems): DatasetItem<NodeableFromLetterKey<K>>[] {
+    processItems({properties, data}: SchemaSubsetItems): DatasetItem<K>[] {
         const propParams: [string, DatasetAnswerParams][] = properties.map(key => {
             const [prop, params] = processPropKey(key);
             if (!(prop in this.properties)) throw new Error("Unknown property " + prop);
@@ -150,7 +133,7 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         });
 
         return data.map(([forms, propValues]) => new DatasetItem(
-            this.processLetterForms(this.validateLetterForms(forms)),
+            this.processLetterForms(this.validateLetterForms(forms), this.forms),
             this.processItemProperties(propParams, propValues)
         ));
     }
@@ -182,30 +165,22 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         return result;
     }
 
-    standardizeLetterForms(forms: (LetterItemTypeMap[K] | null)[]): Record<string, LetterItemTypeMap[K]> {
-        const formKeys = Object.keys(this.forms.data);
-        return Object.fromEntries(
-            forms
-                .map((str, index) => [formKeys[index], str])
-                .filter(([_, str]) => str != null)
-        );
-    }
-
-    processLetterForms(forms: (LetterItemTypeMap[K] | null)[]): Record<string, NodeableFromLetterKey<K>> {
-        return ObjectUtils.map(this.standardizeLetterForms(forms), data => this.getNodeable(data));
+    processLetterForms(forms: (LetterItemTypeMap[K] | null)[], formKeys: string[]): Record<string, NodeableFromLetterKey<K>> {
+        const result: Record<string, NodeableFromLetterKey<K>> = {};
+        for (const [index, value] of forms.entries()) {
+            if (value == null) continue;
+            result[formKeys[index]] = this.getNodeable(value);
+        }
+        return result;
     }
 
     getNodeable(data: LetterItemTypeMap[K]): NodeableFromLetterKey<K> {
         if (this.letterConfig.type === "svg") {
+            // @ts-ignore
             return SVGNodeable.fromTemplate((this.letterConfig as SchemaSVGLetterConfig).template, data as (string | number)[]);
         }
 
         return createNodeable(this.letterConfig.type, data as string);
-    }
-
-    hasCombine(form: string): boolean {
-        if (!this.forms.exclusive) return false;
-        return !!this.forms.data[form].combine;
     }
 
     getLang(variant?: string): string | undefined {
@@ -244,7 +219,7 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
             mapKey = "prop:" + createSinglePropKey(prop, params);
             this.itemIndexMaps[mapKey] ??= this.createPropertyIndexMap(prop, params);
         } else if (key === "form" || key.substring(0, 5) === "form:") {
-            const formKey = key === "form" ? Object.keys(this.forms.data)[0] : key.substring(5);
+            const formKey = key === "form" ? this.forms[0] : key.substring(5);
             mapKey = "form:" + formKey;
             this.itemIndexMaps[mapKey] ??= this.createFormIndexMap(formKey);
         } else {
@@ -281,66 +256,11 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         );
     }
 
-    getPropertySplitter(property: string) {
-        let config = this.properties[property].config;
-        let regex = "";
-        while (config.type === "list") {
-            const splitter = config.properties?.splitter ?? DefaultListSplitter;
-            if (regex.length > 0) regex += "|";
-            regex += splitter;
-            config = config.items;
-        }
-        return regex ? new RegExp(regex, "g") : undefined;
-    }
-
-    ungroupedForms(): Record<string, SchemaFormConfig> {
-        return ObjectUtils.filter(this.forms.data, f => !("groupWith" in f));
-    }
-
     isItemIncluded(index: number, variant?: string): boolean {
         if (this.variants && variant) {
             return this.variants.data[variant].includesItem[index];
         }
         return true;
-    }
-
-    getSelectorSettings(checked: Partial<SelectorSettings> = {}) {
-        return new SettingCollection({
-            variant: this.variantSetting(checked.variant),
-            forms: this.formsSetting(checked.forms)
-        });
-    }
-
-    propertySetting(checked?: string[]) {
-        const propertyKeys = Object.keys(this.properties);
-        if (propertyKeys.length === 1) return new ConstantSetting(propertyKeys);
-
-        return createButtonGroup(
-            ObjectUtils.map(this.properties, p => p.label),
-            {
-                label: "Properties",
-                checked: checked ?? ObjectUtils.filterKeys(this.properties, p => !!p.active)
-            }
-        );
-    }
-
-    formsSetting(checked?: string[]) {
-        const ungroupedForms = this.ungroupedForms();
-        const keys = Object.keys(ungroupedForms);
-
-        if (keys.length === 1) return new ConstantSetting(keys);
-
-        const label = this.forms.label;
-        const defaultChecked = this.forms.exclusive ? [keys[0]] : keys;
-        return createButtonGroup(
-            ObjectUtils.map(ungroupedForms, (p) => p.label),
-            {
-                label: label,
-                type: "checkbox",
-                checked: checked ?? defaultChecked,
-                exclusiveCheckboxes: this.forms.exclusive
-            },
-        );
     }
 
     variantSetting(selected?: string): ObservableSetting<string> {
@@ -378,26 +298,35 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         return layout;
     }
 
-    createSelector(): DatasetSelector<K> {
+    createSelector(callbacks?: SelectorButtonCallbacks<DatasetItem<K>>): DatasetSelector<K> {
+        callbacks ??= this.getSelectorButtonCallbacks();
         const subsets = completeIndexSubsets(this.selectorData.blocks.map(block => block.indices), this.items.length);
 
-        return new Selector(this.items, subsets, (items, b) => this.getSelectorBlock(items, b));
+        const selector = new Selector(
+            this.items,
+            subsets,
+            (items, b) => this.getSelectorBlock(items, callbacks, b)
+        );
+
+        selector.blocks.forEach((block, index) => {
+            block.applyStyle(Object.assign({}, this.selectorData.style, this.selectorData.blocks[index].style));
+        });
+
+        return selector;
     }
 
-    getSelectorButtonCallbacks(): SelectorButtonCallbacks<DatasetItem<NodeableFromLetterKey<K>>> {
-        const forms = Object.keys(this.forms.data);
+    getSelectorButtonCallbacks(): SelectorButtonCallbacks<DatasetItem<K>> {
         return {
-            content: item => item.combineForms(forms).getNode(),
+            content: item => item.combineForms(this.forms).getNode(),
             ...(this.selectorData.label ? {label: item => this.getSelectorItemLabel(item)} : {})
         };
     }
 
-    getSelectorBlock(items: DatasetItem<NodeableFromLetterKey<K>>[], blockIndex: number) {
+    getSelectorBlock(items: DatasetItem<K>[], callbacks: SelectorButtonCallbacks<DatasetItem<K>>, blockIndex: number) {
         const data = this.selectorData.blocks[blockIndex];
-        const buttonCallbacks = this.getSelectorButtonCallbacks();
-        if (!data.grid) return new SelectorBlock(items, buttonCallbacks);
+        if (!data.grid) return new SelectorBlock(items, callbacks);
 
-        const block = new SelectorGridBlock(items, buttonCallbacks, this.getGridLayout(data.dimensions, data.gaps), data.fillDirection);
+        const block = new SelectorGridBlock(items, callbacks, this.getGridLayout(data.dimensions, data.gaps), data.fillDirection);
 
         if (data.rowLabels) block.setGridLabels("row", data.rowLabels, {position: data.rowLabelPosition, spans: data.rowLabelSpans});
         if (data.columnLabels) block.setGridLabels("column", data.columnLabels, {position: data.columnLabelPosition, spans: data.columnLabelSpans});
@@ -407,29 +336,7 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         return block;
     }
 
-    getSelectorBlockStyles() {
-        const baseStyle = this.selectorData.style ?? {};
-        return this.selectorData.blocks.map(block => Object.assign(baseStyle, block.style));
-    }
-
-    getFormKeysFromGrouped(value?: string[]): string[] {
-        if (!value) return Object.keys(this.forms.data);
-
-        const keys = value.slice();
-
-        for (const [key, form] of Object.entries(this.forms.data)) {
-            if (form.groupWith && value.includes(form.groupWith)) {
-                const index = keys.indexOf(form.groupWith);
-                if (index !== -1) {
-                    keys.splice(index + 1, 0, key);
-                }
-            }
-        }
-
-        return keys;
-    }
-
-    getSelectorItemLabel(item: DatasetItem<NodeableFromLetterKey<K>>): string {
+    getSelectorItemLabel(item: DatasetItem<K>): string {
         if (!this.selectorData.label) throw new Error("Selector doesn't have labels.");
         const property = this.selectorData.label.property;
         const splitFirst = this.selectorData.label.splitFirst ?? true;
@@ -439,40 +346,12 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
         });
     }
 
-    // =================================== QUIZ ITEMS ===================================
-    getQuizAnswers(item: DatasetItem<NodeableFromLetterKey<K>>, properties: string[], params: DatasetAnswerParams) {
-        return ObjectUtils.fromKeys(properties, p => this.properties[p].factory(item.properties[p].get(params)));
-    }
-
-    getQuizItems(items: DatasetItem<NodeableFromLetterKey<K>>[], properties: string[], forms: string[], params: DatasetAnswerParams) {
-        return items.flatMap(item => {
-            const availableForms = item.getAvailableForms(forms);
-            const answers = this.getQuizAnswers(item, properties, params);
-            return availableForms.map(
-                form => new QuizItem(item.getForm(form), answers)
-            );
-        });
-    }
-
-    getReferenceItems(properties: string[], forms: string[], params: DatasetAnswerParams) {
-        if (!this.forms.exclusive) forms = Object.keys(this.forms.data);
-
-        return this.items.map(item => new QuizItem(
-            item.combineForms(forms),
-            this.getQuizAnswers(item, properties, params)
-        ));
+    getPropertySplitter(property: string) {
+        return getSplitter(this.properties[property].config);
     }
 
     defaultFormKey(): string {
-        return Object.keys(this.forms.data)[0];
-    }
-
-    getFormConfig(form?: string) {
-        return this.forms.data[form ?? this.defaultFormKey()];
-    }
-
-    combineMethods(form: string): string[] | undefined {
-        return this.getFormConfig(form).combine;
+        return this.forms[0];
     }
 
     letterSelect({form, selected}: {form?: string, selected?: number} = {}): TransformedSetting<number> {
@@ -503,11 +382,11 @@ export default class DatasetSubset<K extends keyof LetterElementMap> {
 }
 
 
-export class DatasetItem<N extends Nodeable<any>> {
-    forms: Record<string, N>;
+export class DatasetItem<K extends keyof LetterItemTypeMap> {
+    forms: Record<string, NodeableFromLetterKey<K>>;
     properties: Record<string, DatasetAnswerValue>;
 
-    constructor(forms: Record<string, N>, properties: Record<string, DatasetAnswerValue>) {
+    constructor(forms: Record<string, NodeableFromLetterKey<K>>, properties: Record<string, DatasetAnswerValue>) {
         this.forms = forms;
         this.properties = properties;
     }
@@ -519,7 +398,7 @@ export class DatasetItem<N extends Nodeable<any>> {
         return forms.filter(form => this.hasForm(form));
     }
 
-    getForm(form: string): N {
+    getForm(form: string): NodeableFromLetterKey<K> {
         if (this.forms[form] == null) throw new Error(`Item doesn't have form key ${form}.`);
         return this.forms[form];
     }

@@ -107,7 +107,7 @@ $selectorBorderRadius: .25rem;
     cursor: pointer;
     transition: border $shortTransition, background $shortTransition, color $shortTransition;
 
-    padding: .3rem 0;
+    padding: .25rem 0;
 
     border-width: 1px;
     border-style: solid;
@@ -164,5 +164,9 @@ $selectorBorderRadius: .25rem;
     padding-inline: .3em;
     pointer-events: none;
     text-align: center;
+
+    &:empty {
+      display: none;
+    }
   }
 }

@@ -17,6 +17,14 @@ const sliderFactory = DOMFactory(
     {...sliderElements, container: ["div"]}
 );
 
+export interface SliderConfig {
+    min: number;
+    max: number;
+    step?: number;
+    value?: number;
+    label?: string;
+}
+
 export default class Slider extends ValueElementBase<HTMLInputElement, number> implements Setting<number> {
     min: number;
     max: number;
@@ -45,14 +53,17 @@ export default class Slider extends ValueElementBase<HTMLInputElement, number> i
         return node instanceof HTMLInputElement && node.type === "range";
     }
 
-    static create(min: number, max: number, value: number = min): Slider {
+    static create(config: SliderConfig): Slider {
         const node = sliderFactory();
         const input = node.input;
-        input.min = min.toString();
-        input.max = max.toString();
+        input.min = config.min.toString();
+        input.max = config.max.toString();
 
         const slider = new this(node.container);
-        slider.value = value;
+        slider.value = config.value ?? config.min;
+
+        if (config.label) slider.label(config.label);
+        if (config.step) slider.setStep(config.step);
 
         return slider;
     }
@@ -119,5 +130,10 @@ export default class Slider extends ValueElementBase<HTMLInputElement, number> i
         this.valueNode.max = max.toString();
         this.updateProgress();
         this.displayMinMax();
+    }
+
+    setMinMax(values: [min: number, max: number]) {
+        this.setMin(values[0]);
+        this.setMax(values[1]);
     }
 }

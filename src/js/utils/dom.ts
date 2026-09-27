@@ -2,7 +2,7 @@ import * as ObjectHelper from './object';
 import {map} from "./object";
 
 export type StylableElement = HTMLElement | SVGElement;
-export type ElementAttrs = Record<string, string | boolean>;
+export type ElementAttrs = Record<string, string | boolean | undefined>;
 
 export type SelectorPair = readonly [tagName: keyof HTMLElementTagNameMap, selector?: string];
 export type SelectedElement<T extends SelectorPair | keyof HTMLElementTagNameMap | string> = T extends SelectorPair ? HTMLElementTagNameMap[T[0]] : T extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[T] : HTMLElement;
@@ -264,7 +264,7 @@ const booleanAttributes = new Set([
 
 export function setAttrs(element: Element, attrs: ElementAttrs) {
     for (const [key, value] of Object.entries(attrs)) {
-        setAttr(element, key, value);
+        if (value != null) setAttr(element, key, value);
     }
 }
 

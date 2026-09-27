@@ -18,41 +18,52 @@
     "keys": ["en", "de"],
     "default": "en"
   },
+  "games": {
+    "configs": {
+      "letters": {
+        "type": "single",
+        "subset": "letters",
+        "forms": {
+          "label": "Forms",
+          "data": {
+            "upper": {
+              "label": "Uppercase"
+            },
+            "lower": {
+              "label": "Lowercase"
+            },
+            "final": {
+              "label": "Final",
+              "groupWith": "lower"
+            }
+          },
+          "exclusive": false
+        }
+      }
+    }
+  },
   "subsets": {
     "letters": {
       "label": "Letters",
       "properties": {
         "name": {
-          "label": "Name",
           "config": {
-            "type": "list",
-            "items": {
-              "type": "string",
-              "properties": {
-                "maxDist": 1
-              }
-            }
-          },
-          "active": true
+            "type": "string",
+            "maxDist": 1,
+            "list": [{}]
+          }
         }
       },
       "selector": {
         "font": {"key": "serif"},
         "label": {"property": "name"},
-        "style": {"buttonWidth": 2.125}
-      },
-      "forms": {
-        "label": "Forms",
-        "data": {
-          "upper": {
-            "label": "Uppercase",
-            "active": true
-          },
-          "lower": {"label": "Lowercase"},
-          "final": {"label": "Final", "groupWith": "lower"}
+        "style": {
+          "buttonWidth": 2.25,
+          "labelGap": 2
         }
       },
       "items": {
+        "forms": ["upper", "lower", "final"],
         "properties": ["name", "name>lang:de"],
         "data": [
           [["Α", "α"], ["alpha", "Alpha"]],

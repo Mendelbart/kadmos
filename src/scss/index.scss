@@ -456,9 +456,21 @@ dialog {
   color: var(--fg-color);
 }
 
+.letter-diacritic-base {
+  color: color-mix(36% var(--fg-color), 64% var(--clr-background));
+}
+
 .letter-combination {
   display: flex;
   gap: .0625rem;
+}
+
+.diacritic-overlay-container {
+  position: relative;
+
+  .letter-diacritic-base {
+    position: absolute;
+  }
 }
 
 .image-nodeable, .svg-nodeable {

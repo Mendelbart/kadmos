@@ -1,5 +1,5 @@
 import {DOMUtils, ObjectUtils} from '../utils';
-import {SettingCollection} from "../settings";
+import {SettingCollection, Slider} from "../settings";
 import DATASETS_METADATA from '../../json/datasets_meta.json';
 import {ElementFontProperties, Font} from "../utils/font";
 import DatasetSubset, {SubsetVariantsConfig} from "./DatasetSubset";
@@ -7,7 +7,7 @@ import {BrailleString, StringCombiner, StringLetter} from "../letter";
 import {createButtonGroup} from "../settings/ButtonGroup";
 import {
     SchemaCombineConfig, SchemaCombineMethod, SchemaCombinePropertyConfig, SchemaCombineTemplates,
-    SchemaFonts, SchemaGameConfig, SchemaGlobalSelectorConfig,
+    SchemaFonts, SchemaGameConfig, SchemaGamesConfig, SchemaGlobalSelectorConfig,
     SchemaKadmosDataset, SchemaLanguages,
     SchemaLetterConfig,
     SchemaMetadata, SchemaStringLetterConfig, SchemaSubset, SchemaSubsetVariants,
@@ -18,6 +18,8 @@ import {LetterElementMap, LetterType} from "../letter/utils";
 import ConstantSetting from "../settings/ConstantSetting";
 import {ObservableSetting} from "../settings/SettingCollection";
 import {CombineConfig} from "../letter/letter";
+import DatasetSingleGame, {fontSettingsPair} from "./DatasetSingleGame";
+import {capitalize} from "../utils/object";
 
 const headingElementFactory = DOMFactory(
     `<div class="heading-element"><span class="heading-element-number"></span><span class="heading-element-symbol"></span></div>`,
@@ -40,6 +42,7 @@ const LANGUAGES = {
     en: "English",
     de: "German"
 } as const;
+export type LanguageKey = keyof typeof LANGUAGES;
 
 const DatasetsCache: Record<string, Dataset<keyof LetterElementMap>> = {};
 
@@ -64,9 +67,9 @@ interface PropertyCombineConfig {
     templates?: SchemaCombineTemplates
     combiner: StringCombiner
 }
-type CombineMethod = Omit<SchemaCombineMethod, "properties"> & {
+
+type CombineMethod = SchemaCombineMethod & {
     combiner: StringCombiner
-    properties?: Record<string, PropertyCombineConfig>
 }
 interface DatasetCombineConfig {
     methods: Record<string, CombineMethod>
@@ -99,6 +102,7 @@ export class Dataset<K extends LetterType> {
     subsets: Record<string, DatasetSubset<K>>;
     combine?: DatasetCombineConfig;
     selectorConfig?: SchemaGlobalSelectorConfig;
+    games: Record<string, DatasetSingleGame<K>>
 
     constructor(data: SchemaKadmosDataset & {letterConfig: {type: K}}) {
         this.metadata = this.processMetadata(data.metadata);
@@ -115,6 +119,8 @@ export class Dataset<K extends LetterType> {
         this.selectorConfig = data.selector;
         this.subsets = this.processSubsets(data.subsets);
         if (data.combine) this.combine = this.processCombine(data.combine);
+
+        this.games = this.processGames(data.games);
     }
 
     static async fetch(key: string): Promise<Dataset<keyof LetterElementMap>> {
@@ -208,13 +214,9 @@ export class Dataset<K extends LetterType> {
     }
 
     processCombineMethod(method: SchemaCombineMethod): CombineMethod {
-        const properties = !method.properties ? undefined
-            : ObjectUtils.map(method.properties, config => this.processCombineProperty(config, method.subsets.length));
-
         return {
             ...method,
-            combiner: new StringCombiner(method.subsets.length, method.templates ?? [], {regExpFlags: method.regExpFlags}),
-            properties
+            combiner: new StringCombiner(method.from.length, method.templates ?? [], {regExpFlags: method.regExpFlags}),
         };
     }
 
@@ -229,8 +231,43 @@ export class Dataset<K extends LetterType> {
         };
     }
 
+    processGames(games: SchemaGamesConfig = {}) {
+        const configs = games.configs ?? ObjectUtils.fromKeys(Object.keys(this.subsets), subset => {
+            return {
+                type: "single",
+                subset: subset,
+                label: undefined
+            };
+        });
+
+        return ObjectUtils.map(configs, (config, key) => {
+            if (config.type === "single") {
+                return new DatasetSingleGame(this, this.subsets[config.subset], {
+                    ...config,
+                    label: config.label ?? capitalize(key as string)
+                });
+            }
+            throw new Error("Haven't implemented combining game yet.");
+        });
+    }
 
     // ============================= SETTINGS ============================
+    gameSetting(checked?: string) {
+        const keys = Object.keys(this.games);
+        if (!checked || !keys.includes(checked)) checked = keys[0];
+
+        if (keys.length === 1) return new ConstantSetting(checked);
+
+        return createButtonGroup(
+            ObjectUtils.map(this.games, s => s.label),
+            {
+                checked: checked,
+                type: "radio"
+            }
+        );
+    }
+
+
     subsetSetting(checked?: string) {
         const keys = Object.keys(this.subsets);
         if (!checked || !keys.includes(checked)) checked = keys[0];
@@ -254,7 +291,7 @@ export class Dataset<K extends LetterType> {
         });
     }
 
-    languageSetting(checked?: string) {
+    languageSetting(checked?: string): ObservableSetting<LanguageKey> {
         const keys = this.languages.keys;
         if (keys.length === 1) return new ConstantSetting(keys[0]);
         
@@ -276,7 +313,7 @@ export class Dataset<K extends LetterType> {
         return this.metadata.dir;
     }
 
-    getLetterNodeAttrs(subset?: string, variant?: string): { lang?: string; dir?: string; } {
+    getLetterNodeAttrs(subset?: string, variant?: string) {
         return {
             lang: this.getLang(subset, variant),
             dir: this.getDir()
@@ -384,23 +421,6 @@ export class Dataset<K extends LetterType> {
         return this.getFont(this.getSubset(subset).selectorData.font, variant);
     }
 
-    fontFamilySetting(checked?: string) {
-        if (!this.fonts) throw new Error("Dataset doesn't have fonts.");
-        
-        if (Object.keys(this.fonts.data).length === 1) return new ConstantSetting(this.fonts.defaultKey);
-
-        const setting = createButtonGroup(
-            ObjectUtils.map(this.fonts.data, font => font.label),
-            {
-                label: "Font",
-                type: "radio",
-                checked: checked ?? this.fonts.defaultKey
-            }
-        );
-        setting.node.classList.add("font-family-setting");
-        return setting;
-    }
-
     getGameHeading(variant?: string) {
         const data = this.metadata.gameHeading;
         if (!data) return "Kadmos";
@@ -422,6 +442,29 @@ export class Dataset<K extends LetterType> {
         if (font) font.applyTo(span);
 
         return span;
+    }
+
+
+    getFonts(variant?: string) {
+        if (!this.fonts) throw new Error("Dataset doesn't have fonts.");
+        return ObjectUtils.map(this.fonts.data, (_, key) => this.getFont({key}, variant));
+    }
+    
+    getFontLabels() {
+        if (!this.fonts) throw new Error("Dataset doesn't have fonts.");
+        return ObjectUtils.map(this.fonts.data, font => font.label);
+    }
+
+    getFontSettingsPair(variant?: string) {
+        if (!this.fonts) throw new Error("Dataset doesn't have fonts.");
+        return fontSettingsPair(
+            this.getFonts(variant),
+            this.getFontLabels(),
+            {
+                family: this.fonts.defaultKey,
+                weight: this.fonts.data[this.fonts.defaultKey].params?.weight
+            }
+        )
     }
 }
 

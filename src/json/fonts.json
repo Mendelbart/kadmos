@@ -100,6 +100,7 @@
   },
   {
     "family": "Noto Sans Devanagari",
+    "lineHeight": 1.25,
     "variationSettings": {
       "wght": "100 900",
       "wdth": "100"
@@ -107,6 +108,7 @@
   },
   {
     "family": "Noto Serif Devanagari",
+    "lineHeight": 1.25,
     "fallback": "serif",
     "shift": 0.1,
     "variationSettings": {

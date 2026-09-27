@@ -3,15 +3,17 @@ import SelectorBlock, {SelectorContentsUpdateCallback} from "./SelectorBlock";
 import {sumCallback} from "../utils/array";
 import {DOMUtils, Observable} from "../utils";
 import {SchemaSelectorBlockStyle} from "../../json/dataset.schema";
+import {Font} from "../utils/font";
+import {Setting} from "../settings/ValueElement";
 
 export type SelectorItemCallback<T, V=any> = (item: T, index: number) => V;
 
-export default class Selector<T> extends Observable<[boolean[]]> {
-    items: T[];
-    subsets: number[][];
-    subsetsInverse: [number, number][];
-    blocks: SelectorBlock<T>[];
-    node: HTMLDivElement;
+export default class Selector<T> extends Observable<[boolean[]]> implements Setting<boolean[]> {
+    readonly items: T[];
+    readonly subsets: number[][];
+    readonly subsetsInverse: [number, number][];
+    readonly blocks: SelectorBlock<T>[];
+    readonly node: HTMLDivElement;
 
     constructor(items: T[], subsets: number[][], createBlock: (items: T[], subsetIndex: number) => SelectorBlock<T>) {
         super();
@@ -26,11 +28,19 @@ export default class Selector<T> extends Observable<[boolean[]]> {
         this.node = DOMUtils.tag("div", ".selector", ...this.blocks.map(block => block.node));
     }
 
+    get value(): boolean[] {
+        return this.getChecked();
+    }
+
+    set value(checked: boolean[]) {
+        this.setChecked(checked);
+    }
+
     observerArgs(): [boolean[]] {
         return [this.getChecked()];
     }
 
-    private _itemCallback<V>(blockFunc: (block: SelectorBlock<T>, callback: SelectorItemCallback<T,V>) => void, callback: SelectorItemCallback<T>) {
+    private _itemCallback<V>(blockFunc: (block: SelectorBlock<T>, callback: SelectorItemCallback<T,V>) => void, callback: SelectorItemCallback<T, V>) {
         this.blocks.forEach((block, s) => {
             blockFunc(block, (item, j) => callback(item, this.subsets[s][j]));
         });
@@ -42,12 +52,23 @@ export default class Selector<T> extends Observable<[boolean[]]> {
         });
     }
 
-    setChecked(callback: SelectorItemCallback<T,boolean>) {
-        this._itemCallback<boolean>((b, f) => b.setChecked(f), callback);
+    setChecked(checked: boolean[]): void
+    setChecked(callback: SelectorItemCallback<T,boolean>): void
+    setChecked(callback: SelectorItemCallback<T,boolean> | boolean[]): void {
+        if (Array.isArray(callback)) {
+            const checked = callback;
+            callback = (_, index) => checked[index];
+        }
+        this._itemCallback((b, f) => b.setChecked(f), callback);
     }
 
     setDisabled(callback: SelectorItemCallback<T,boolean>) {
-        this._itemCallback<boolean>((b, f) => b.setDisabled(f), callback);
+        this._itemCallback((b, f) => b.setDisabled(f), callback);
+        this.callObservers();
+    }
+
+    updateLabels(callback: SelectorItemCallback<T, string>) {
+        this._itemCallback((b, f) => b.updateLabels(f), callback);
     }
 
     getCheckedItems(): T[] {
@@ -94,5 +115,9 @@ export default class Selector<T> extends Observable<[boolean[]]> {
             }
         }
         this.teardown();
+    }
+
+    applyFont(font: Font) {
+        this.updateButtonContents(content => font.applyTo(content));
     }
 }

@@ -1,13 +1,11 @@
 import {DOMUtils, Observable} from "../utils";
-import {SelectOptionsConfig} from "../utils/dom";
+import {SelectOptionsConfig, StylableElement} from "../utils/dom";
 import {ObservableSetting} from "./SettingCollection";
 
 
 export interface Setting<V> {
     value: V,
-    node: HTMLElement,
-    label(label: string): void,
-    remove(): void
+    node?: HTMLElement
 }
 
 let IdCount = 0;
@@ -73,8 +71,8 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
         return "ve_" + prefix + IdCount.toString().padStart(4, "0");
     }
 
-    label(labelString: string): void {
-        if (!labelString) return;
+    label(label: string): void {
+        if (!label) return;
 
         let labelElement = this.node.querySelector("label");
         if (!labelElement) {
@@ -86,12 +84,12 @@ export abstract class ValueElementBase<T extends HTMLValueElementType, V> extend
             this.node.prepend(labelElement);
         }
 
-        labelElement.textContent = labelString;
+        labelElement.textContent = label;
     }
 
-    remove(): void {
+    teardown(): void {
         this.valueNode.removeEventListener(this.updateEvent, this.callObservers);
-        this.node.remove();
+        super.teardown();
     }
 }
 
@@ -113,7 +111,7 @@ export class TransformedSetting<V, T = string> extends Observable<[V]> implement
     setting: ObservableSetting<T>;
     transform: (value: T) => V;
     invTransform: (transformedValue: V) => T;
-    node: HTMLElement;
+    node?: HTMLElement;
 
     constructor(setting: ObservableSetting<T>, transform: (value: T) => V, invTransform: (transformedValue: V) => T) {
         super();
@@ -137,12 +135,9 @@ export class TransformedSetting<V, T = string> extends Observable<[V]> implement
         this.setting.value = this.invTransform(value);
     }
 
-    label(label: string) {
-        this.setting.label(label);
-    }
-
-    remove() {
-        this.setting.remove();
+    teardown() {
+        this.setting.teardown();
+        super.teardown();
     }
 }
 

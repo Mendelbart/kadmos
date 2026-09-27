@@ -1,5 +1,6 @@
 import * as ObjectUtils from "./object";
 import _font_data from '../../json/fonts.json';
+import {StylableElement} from "./dom";
 
 export interface FontFaceData extends Record<string, any> {
     fallback?: string,
@@ -140,13 +141,13 @@ function digestFontVariationSettings(variationSettings: ElementVariationSettings
     return result;
 }
 
-export function clearFont(element: HTMLElement): void {
+export function clearFont(element: StylableElement): void {
     for (const property of Object.values(FONT_PROPERTY_KEYS)) {
         element.style.removeProperty(property);
     }
 }
 
-function setStylesets(element: HTMLElement, stylesets: string | string[], family: string): void {
+function setStylesets(element: StylableElement, stylesets: string | string[], family: string): void {
     const data = FONT_DATA[family];
     if (!data) throw new Error("Unknown family.");
     if (!data.styleset) throw new Error("Family doesn't have stylesets.");
@@ -225,7 +226,7 @@ export class Font {
         return new Font(this.family, newParams);
     }
 
-    applyTo(element: HTMLElement): void {
+    applyTo(element: StylableElement): void {
         const data = this.getFontData();
 
         clearFont(element);

@@ -5,7 +5,9 @@ export type Keys<T> = (keyof T)[]
 export type Entry<T> = {[K in keyof T]: [K, T[K]]}[keyof T]
 export type Entries<T> = Entry<T>[];
 
-export function map<T extends object, V>(obj: T, callback: (value: T[keyof T], key: keyof T) => V): { [K in keyof T]: V } {
+export type ObjectLike = ArrayLike<any> | {[x: string]: any}
+
+export function map<T extends ObjectLike, V>(obj: T, callback: (value: T[keyof T], key: keyof T) => V): { [K in keyof T]: V } {
     return Object.fromEntries(
         (Object.entries(obj) as Entries<T>).map(
             ([k, v]) => [k, callback(v, k)]
@@ -74,4 +76,9 @@ export function subsetToBoolRecord<K extends string>(subset: K[] | Record<K, boo
         console.log(Object.keys(subset).sort(), keys.sort());
     }
     return fromKeys(keys, key => subset[key]);
+}
+
+export function capitalize(str: string) {
+    if (str.length === 0) return "";
+    return str[0].toUpperCase() + str.substring(1);
 }

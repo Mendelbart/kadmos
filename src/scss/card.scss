@@ -15,6 +15,7 @@ $borderRadiusSmall: .5rem;
   font-weight: var(--symbol-weight, 400);
 
   background: var(--clr-symbol-bg);
+  --clr-background: var(--clr-symbol-bg);
   border-radius: $borderRadiusSmall;
 
   pointer-events: none;

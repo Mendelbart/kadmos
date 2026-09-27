@@ -176,72 +176,88 @@
     "quizAnswerConfig": {
       "x-interface": "Quiz Answer Config",
       "title": "Answer Config",
+      "type": "object",
       "oneOf": [
         {
           "type": "object",
           "x-switcherTitle": "String",
+          "x-interface": "String Answer Config",
           "properties": {
             "type": {
               "const": "string"
             },
-            "properties": {
-              "type": "object",
-              "x-interface": "String Answer Config",
-              "title": "Config",
-              "properties": {
-                "maxDist": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "default": 0,
-                  "description": "Maximum distance (optimal string alignment) to pass."
+            "maxDist": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Maximum distance (optimal string alignment) to pass."
+            },
+            "maxDistMult": {
+              "type": "number",
+              "description": "If value is n, add 1 to maxDist for every n characters of the word.",
+              "minimum": 0,
+              "default": 0
+            },
+            "substitutions": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
                 },
-                "maxDistMult": {
-                  "type": "number",
-                  "description": "If value is n, add 1 to maxDist for every n characters of the word.",
-                  "minimum": 0,
-                  "default": 0
-                },
-                "substitutions": {
-                  "type": "array",
-                  "description": "Search-replace entries, using regular expressions, to describe equivalent substitutions that the answerer can use.",
-                  "x-format": "table-object",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "pattern": {
-                        "type": "string"
-                      },
-                      "repl": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "additionalProperties": false,
-                    "required": ["pattern", "repl"]
+                "minLength": 2,
+                "maxLength": 2,
+                "tsType": "[string, string]"
+              }
+            },
+            "gradeSubstitutions": {
+              "type": "array",
+              "description": "Search-replace pairs, using regular expressions, to describe equivalent substitutions that the answerer can use.",
+              "x-format": "table-object",
+              "items": {
+                "type": "array",
+                "x-interface": "AnswerSubstitutions",
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
-                },
-                "forceSubstitutions": {
-                  "title": "Force substitutions",
-                  "type": "boolean",
-                  "default": false,
-                  "description": "If true, the substitutions need to be used if applicable."
-                },
-                "caseSensitive": {
-                  "title": "Case-sensitive",
-                  "type": "boolean",
-                  "default": false,
-                  "description": "Whether the answer is case-sensitive."
-                },
-                "ignoreBrackets": {
-                  "title": "Ignored brackets contents",
-                  "type": "string",
-                  "default": "(",
-                  "description": "Used to ignore content in brackets or parentheses for grading. String of opening bracket characters, e.g. \"([\" to ignore (...) and [...]."
+                ],
+                "items": false,
+                "minLength": 2,
+                "maxLength": 2,
+                "tsType": "[string, string[]]"
+              }
+            },
+            "caseSensitive": {
+              "title": "Case-sensitive",
+              "type": "boolean",
+              "default": false,
+              "description": "Whether the answer is case-sensitive."
+            },
+            "list": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "splitter": {
+                    "type": "string",
+                    "default": "[,;/]",
+                    "description": "RegExp to split input into list of answers."
+                  },
+                  "gradeMode": {
+                    "enum": ["one", "all"],
+                    "x-enumTitles": ["Match One", "Match All"],
+                    "default": "one",
+                    "description": "Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average."
+                  }
                 }
-              },
-              "additionalProperties": false
+              }
             }
           },
           "required": ["type"],
@@ -250,64 +266,27 @@
         {
           "type": "object",
           "x-switcherTitle": "Numeric",
+          "x-interface": "Number Answer Config",
           "properties": {
             "type": {
-              "type": "string",
-              "enum": ["number", "integer"],
-              "x-enumTitles": ["Number", "Integer"]
+              "const": "number"
             },
-            "properties": {
-              "type": "object",
-              "title": "Number Answer Config",
-              "properties": {
-                "maxDist": {
-                  "type": "number",
-                  "default": 0,
-                  "description": "Maximum distance from value to pass."
-                },
-                "distanceMode": {
-                  "type": "string",
-                  "default": "linear",
-                  "description": "\"linear\" (default), \"log\" or \"log{BASE}\" where BASE is the log base to use, default base is 10."
-                }
-              }
+            "integer": {
+              "type": "boolean",
+              "default": false
+            },
+            "maxDist": {
+              "type": "number",
+              "default": 0,
+              "description": "Maximum distance from value to pass."
+            },
+            "distanceMode": {
+              "type": "string",
+              "default": "linear",
+              "description": "\"linear\" (default), \"log\" or \"log{BASE}\" where BASE is the log base to use, default base is 10."
             }
           },
           "required": ["type"],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "x-interface": "List Answer Config",
-          "title": "List Answer Config",
-          "x-switcherTitle": "List",
-          "properties": {
-            "type": {
-              "const": "list"
-            },
-            "properties": {
-              "type": "object",
-              "x-format": "grid",
-              "properties": {
-                "splitter": {
-                  "type": "string",
-                  "default": "[,/]",
-                  "description": "RegExp to split input into list of answers."
-                },
-                "gradeMode": {
-                  "enum": ["one", "all"],
-                  "x-enumTitles": ["Match One", "Match All"],
-                  "default": "one",
-                  "description": "Whether one or all of the entries need to be matched. One will use the best score of the entries, All will use the average."
-                }
-              }
-            },
-            "items": {
-              "title": "Items",
-              "$ref": "#/$defs/quizAnswerConfig"
-            }
-          },
-          "required": ["type", "items"],
           "additionalProperties": false
         }
       ]
@@ -713,6 +692,193 @@
         "defaultWeight": {"$ref": "#/$defs/fontWeight"}
       }
     },
+    "games": {
+      "type": "object",
+      "x-interface": "Games Config",
+      "title": "Games",
+      "properties": {
+        "configs": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z]+$": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "x-interface": "SingleGameConfig",
+                  "properties": {
+                    "type": {
+                      "const": "single"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "subset": {
+                      "type": "string"
+                    },
+                    "forms": {
+                      "type": "object",
+                      "x-interface": "GameForms",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "unevaluatedProperties": false,
+                          "patternProperties": {
+                            "^[a-z]+$": {
+                              "x-interface": "GameForm",
+                              "type": "object",
+                              "properties": {
+                                "label": {"type": "string"},
+                                "key": {"type": "string"},
+                                "displayConfig": {
+                                  "x-interface": "FormDisplayConfig",
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "const": "normal"
+                                        }
+                                      },
+                                      "required": ["type"],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "const": "diacritic"
+                                        },
+                                        "base": {
+                                          "type": "string"
+                                        },
+                                        "overlay": {
+                                          "type": "object",
+                                          "x-interface": "DiacriticOverlayConfig",
+                                          "properties": {
+                                            "position": {
+                                              "enum": ["left", "right"]
+                                            },
+                                            "pattern": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": ["position", "pattern"],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": ["type", "base"],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "groupWith": {
+                                  "type": "string",
+                                  "title": "Group With Key",
+                                  "description": "If set, this form will not appear in the settings, but will follow the setting of the given key."
+                                }
+                              },
+                              "required": ["label"],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "Label of the button group setting."
+                        },
+                        "exclusive": {
+                          "type": "boolean",
+                          "default": true
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "properties": {
+                      "type": "object",
+                      "x-interface": "GameProperties",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "patternProperties": {
+                            "^[a-z]+$": {
+                              "x-interface": "GameProperty",
+                              "type": "object",
+                              "properties": {
+                                "label": {"type": "string"},
+                                "key": {"type": "string"},
+                                "config": {"$ref": "#/$defs/quizAnswerConfig"}
+                              },
+                              "required": ["label"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "unevaluatedProperties": false
+                        },
+                        "exclusive": {
+                          "type": "boolean"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["type", "subset"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "x-interface": "CombiningGameConfig",
+                  "properties": {
+                    "type": {
+                      "const": "combine"
+                    },
+                    "method": {
+                      "type": "string"
+                    },
+                    "properties": {
+                      "type": "object",
+                      "x-format": "pattern-nav",
+                      "patternProperties": {
+                        "^[a-z]+$": {
+                          "type": "object",
+                          "x-interface": "Combine Property Config",
+                          "properties": {
+                            "sources": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              ]
+                            },
+                            "templates": {"$ref": "#/$defs/combineTemplates"},
+                            "regExpFlags": {"$ref": "#/$defs/regExpFlags"}
+                          },
+                          "additionalProperties": false,
+                          "required": ["sources"]
+                        }
+                      },
+                      "unevaluatedProperties": false
+                    }
+                  },
+                  "required": ["type", "method", "properties"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "subsets": {
       "type": "object",
       "title": "Subsets",
@@ -741,16 +907,11 @@
                   "x-interface": "Subset Property Params",
                   "type": "object",
                   "properties": {
-                    "label": {"type": "string"},
                     "config": {
                       "$ref": "#/$defs/quizAnswerConfig"
-                    },
-                    "active": {
-                      "type": "boolean",
-                      "default": false
                     }
                   },
-                  "required": ["label", "config"],
+                  "required": ["config"],
                   "additionalProperties": false
                 }
               },
@@ -773,7 +934,6 @@
                     "x-objectAdd": false
                   }
                 },
-                "font": {"$ref": "#/$defs/fontRef"},
                 "label": {
                   "type": "object",
                   "description": "Settings for the label underneath letters in the selector. If not set, these won't appear.",
@@ -790,6 +950,7 @@
                   },
                   "required": ["property"]
                 },
+                "font": {"$ref": "#/$defs/fontRef"},
                 "style": {"$ref": "#/$defs/blockStyle"},
                 "defaultActive": {
                   "type": "string",
@@ -800,64 +961,18 @@
               },
               "additionalProperties": false
             },
-            "forms": {
-              "type": "object",
-              "title": "Forms",
-              "x-interface": "Forms Config",
-              "x-category": "Forms",
-              "properties": {
-                "data": {
-                  "type": "object",
-                  "description": "A form of letter, e.g. lower- or uppercase.",
-                  "x-format": "pattern-nav",
-                  "patternProperties": {
-                    "^[a-z]+$": {
-                      "type": "object",
-                      "x-interface": "Form Config",
-                      "properties": {
-                        "combine": {
-                          "type": "array",
-                          "items": {"type": "string"},
-                          "x-editJsonData": true
-                        },
-                        "label": {"type": "string"},
-                        "active": {
-                          "type": "boolean",
-                          "title": "Active",
-                          "default": true
-                        },
-                        "groupWith": {
-                          "type": "string",
-                          "title": "Group With Key",
-                          "description": "If set, this form will not appear in the settings, but will follow the setting of the given key."
-                        }
-                      },
-                      "required": ["label"],
-                      "unevaluatedProperties": false,
-                      "x-objectAdd": false
-                    }
-                  }
-                },
-                "label": {
-                  "type": "string",
-                  "description": "Label of the forms setting. Default \"Forms\".",
-                  "default": "Forms"
-                },
-                "exclusive": {
-                  "type": "boolean",
-                  "description": "If true, you can only select one form to play at a time.",
-                  "default": false
-                }
-              },
-              "required": ["data"],
-              "additionalProperties": false
-            },
             "items": {
               "type": "object",
               "x-interface": "Subset Items",
               "title": "Items",
               "x-category": "Items",
               "properties": {
+                "forms": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
                 "properties": {
                   "type": "array",
                   "description": "Keys to assign the property entries of data rows to. RegExp-ish pattern: `PROPERTY(>(v|var|variant):VARIANT)?(>(l|lang|language):LANGUAGE)?`",
@@ -923,7 +1038,7 @@
               "required": ["letters"]
             }
           },
-          "required": ["label", "properties", "selector", "items"],
+          "required": ["properties", "selector", "items"],
           "additionalProperties": false
         }
       },
@@ -946,64 +1061,25 @@
                 "label": {
                   "type": "string"
                 },
-                "subsets": {
+                "from": {
                   "type": "array",
                   "items": {
-                    "type": "string"
-                  }
-                },
-                "letterConfig": {
-                  "type": "array",
-                  "items": {
-                    "oneOf": [
-                      {"type": "null"},
-                      {
-                        "type": "object",
-                        "properties": {
-                          "form": {
-                            "type": "string"
-                          }
-                        },
-                        "required": ["form"],
-                        "additionalProperties": false
-                      }
-                    ]
-                  }
-                },
-                "properties": {
-                  "type": "object",
-                  "x-format": "pattern-nav",
-                  "patternProperties": {
-                    "^[a-z]+$": {
-                      "type": "object",
-                      "x-interface": "Combine Property Config",
-                      "properties": {
-                        "sources": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          ]
-                        },
-                        "templates": {"$ref": "#/$defs/combineTemplates"},
-                        "regExpFlags": {"$ref": "#/$defs/regExpFlags"}
+                    "type": "object",
+                    "properties": {
+                      "subset": {
+                        "type": "string"
                       },
-                      "additionalProperties": false,
-                      "required": ["sources"]
-                    }
-                  },
-                  "unevaluatedProperties": false
+                      "form": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["subset"]
+                  }
                 },
                 "templates": {"$ref": "#/$defs/combineTemplates"},
                 "regExpFlags": {"$ref": "#/$defs/regExpFlags"}
               },
-              "required": ["label", "subsets"],
+              "required": ["label", "from"],
               "x-required": ["templates"],
               "additionalProperties": false
             }
@@ -1018,7 +1094,8 @@
       "x-interface": "Global Selector Config",
       "type": "object",
       "properties": {
-        "style": {"$ref": "#/$defs/blockStyle"}
+        "style": {"$ref": "#/$defs/blockStyle"},
+        "font": {"$ref": "#/$defs/fontRef"}
       }
     }
   },

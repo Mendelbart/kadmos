@@ -12,11 +12,9 @@
       "label": "Letters",
       "properties": {
         "letter": {
-          "label": "Letter",
           "config": {
             "type": "string"
-          },
-          "active": true
+          }
         }
       },
       "items": {

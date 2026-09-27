@@ -41,11 +41,6 @@ export interface SubsetCache {
 }
 export type DatasetCache = Record<string, SubsetCache>;
 
-export interface FontSettings {
-    family: string;
-    weight: number;
-}
-
 export default class DatasetMediator<K extends LetterType> extends Observable<[DatasetSettingsValues]> {
     dataset: Dataset<K>;
     subset: DatasetSubset<K>;
@@ -165,14 +160,14 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
 
     removeCombineMethodSetting() {
         if (this.settings.combine?.method) {
-            this.settings.combine.method.remove();
+            this.settings.combine.method.node?.remove();
             this.settings.combine.method.teardown();
         }
     }
 
     removeCombineKeysSetting() {
         if (this.settings.combine?.keys) {
-            this.settings.combine.keys.remove();
+            this.settings.combine.keys.node.remove();
             this.settings.combine.keys.teardown();
         }
     }
@@ -447,53 +442,6 @@ export default class DatasetMediator<K extends LetterType> extends Observable<[D
         );
 
         return game;
-    }
-
-    updateSymbolWeightRange(key: string, weightSlider: Slider) {
-        const [min, max] = this.dataset.getFont({key: key}, this.settings.selector?.getValue("variant")).getWeightLimits();
-        weightSlider.setMin(min);
-        weightSlider.setMax(max);
-    }
-
-    getFontSettings() {
-        if (!this.dataset.fonts) throw new Error("Dataset doesn't have fonts.");
-
-        const weightSlider = Slider.create(100, 900, this.dataset.gameConfig.defaultWeight ?? 500);
-        weightSlider.label("Weight");
-
-        const sc = new SettingCollection({family: this.dataset.fontFamilySetting(), weight: weightSlider});
-        this.updateSymbolWeightRange(sc.getValue("family"), weightSlider);
-
-        sc.get("family")?.observers?.push(key => this.updateSymbolWeightRange(key, weightSlider));
-
-        return sc;
-    }
-
-    fontSettingsCallback(variant?: string): (card: Card, value: FontSettings, changed?: keyof FontSettings) => void {
-        return (card, {family, weight}, changed) => {
-            if (this.dataset.hasFonts() && (!changed || changed === "family")) {
-                const font = this.dataset.getFont({key: family}, variant);
-                font.load().then(() => {
-                    font.applyTo(card.displayNode);
-                    if (weight) card.displayNode.style.fontWeight = weight.toString();
-                });
-            } else if (weight) {
-                card.displayNode.style.fontWeight = weight.toString();
-            }
-        }
-    }
-    
-    getBrailleSettings() {
-        const slider = Slider.create(0, 1, 0.35);
-        slider.setStep(0.05);
-        slider.label("Unfilled Dot Size");
-        return slider;
-    }
-
-    brailleSettingsCallback() {
-        return (card: Card, size: number) => {
-            card.displayNode.style.setProperty("--braille-small-dot-size", size.toString());
-        };
     }
 
     teardown() {

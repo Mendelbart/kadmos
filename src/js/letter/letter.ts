@@ -1,9 +1,9 @@
-import {DOMUtils} from '../utils';
 import StringCombiner from "./combine";
-import {StylableElement} from "../utils/dom";
+import {span, StylableElement} from "../utils/dom";
+import {SchemaDiacriticOverlayConfig} from "../../json/dataset.schema";
 
-export interface Nodeable<E extends StylableElement, C extends any[] = []> {
-    getNode(...args: C): E,
+export interface Nodeable<E extends StylableElement = StylableElement> {
+    getNode(): E,
     stringValue(): string
 }
 
@@ -13,27 +13,15 @@ export interface CombineConfig {
     index: number;
 }
 
-export interface StringLetterConfig {
-    combine?: CombineConfig;
-}
-
-export class StringLetter implements Nodeable<HTMLSpanElement, [StringLetterConfig]> {
+export class StringLetter implements Nodeable<HTMLSpanElement> {
     string: string;
 
     constructor(string: string) {
         this.string = string;
     }
 
-    getNode({combine}: StringLetterConfig = {}): HTMLSpanElement {
-        const content = combine ? this.combineSelf(combine) : this.string;
-        return DOMUtils.tag("span", ".letter-string", content);
-    }
-
-    combineSelf(config: CombineConfig): string {
-        const {combiner, values, index} = config;
-        const filledValues = values.slice();
-        filledValues.splice(index, 0, this.string);
-        return combiner.combine(filledValues);
+    getNode(): HTMLSpanElement {
+        return span(".letter-string", this.string);
     }
 
     stringValue() {
@@ -42,19 +30,55 @@ export class StringLetter implements Nodeable<HTMLSpanElement, [StringLetterConf
 }
 
 
+export class DiacriticLetter implements Nodeable<HTMLSpanElement> {
+    base: string
+    diacritic: string
+    overlay?: SchemaDiacriticOverlayConfig
+
+    constructor(base: string, diacritic: string, overlay?: SchemaDiacriticOverlayConfig) {
+        this.base = base;
+        this.diacritic = diacritic;
+
+        if (overlay && diacritic.match(new RegExp(overlay.pattern))) {
+            this.overlay = overlay;
+        }
+    }
+
+    getNode() {
+        if (!this.overlay) {
+            return span(".letter-string",
+                span(".letter-diacritic-base", this.base),
+                span(".letter-diacritic", this.diacritic)
+            );
+        }
+
+        const base = span(".letter-diacritic-base", this.base);
+        base.style.setProperty(this.overlay.position, "0");
+        return span(".letter-string.diacritic-overlay-container",
+            span(".letter-diacritic", this.base + this.diacritic),
+            base
+        );
+    }
+
+    stringValue(): string {
+        return this.base + this.diacritic;
+    }
+}
+
+
 /**
  * Creates a `span.letter-combination` element containing all letter form nodes as children that have `data-form="{FORM-KEY}"`.
  */
-export class LetterFormsCombination<T extends Nodeable<StylableElement, C>, C extends any[]> implements Nodeable<HTMLSpanElement, C> {
-    letters: [T, string][]
+export class LetterFormsCombination implements Nodeable<HTMLSpanElement> {
+    letters: [Nodeable, string][]
 
-    constructor(letters: [T, string][]) {
+    constructor(letters: [Nodeable, string][]) {
         this.letters = letters;
     }
 
-    getNode(...args: C): HTMLSpanElement {
-        return DOMUtils.tag("span", ".letter-combination", ...this.letters.map(([letter, form]) => {
-            const node = letter.getNode(...args);
+    getNode(): HTMLSpanElement {
+        return span(".letter-combination", ...this.letters.map(([letter, form]) => {
+            const node = letter.getNode();
             node.dataset.form = form;
             node.classList.add("letter");
             return node;
